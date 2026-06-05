@@ -1,0 +1,139 @@
+---
+type: post
+title: "Na prática, a teoria é outra."
+summary: Saindo do limbo de análise, escolhendo motores. Por que a loc 6S de tangenciamento direto é praticamente inviável, qual o caminho que sobra, e o motor da arma que fecha o spinup mais rápido que um box rush.
+publishedAt: 2026-01-09
+updatedAt: 2026-01-14
+project: ReBot
+tags: ["combat-robotics", "rebot", "motors", "electronics"]
+lang: pt
+translationKey: na-pratica-a-teoria-e-outra
+---
+
+Tudo precisa de um ponto de partida. Se eu ficar fazendo posts com estudos e análises dos diferentes aspectos barrocos da robótica de combate, esse robô não sai do papel. Acredito que temos conhecimento o suficiente pra ter uma escolha preliminar dos motores. Infelizmente, ainda não são _os melhores_ motores fisicamente possíveis pra aquela situação, mas a escolha é feita de maneira consciente e mirando nos limites que encontramos.
+
+Vou abordar primeiro a loc baseado no limite de velocidade máximo (e considerando que o eixo não pode ser menor que 6mm), e em seguida a arma, com o objetivo de ter um spinup "0 a perigoso" em menos tempo do que é possível um box rush com imã na areninha.
+
+## A tal da loc
+
+No ímpeto de tomar uma decisão de motor, encontrei um problema de bateria. Estou usando como guideline pros motores da locomoção [aquele limite de velocidade na areninha](/pt/posts/tudo-tem-limites#aceleração-e-velocidade) que apareceu no post de constraints:
+
+> Num caso extremo (μ = 0.95, l = 2.83m), $v_{max} \approx$ **5.14 m/s**. Mais realista (μ = 0.85, l = 1m), $v_{max} \approx$ **2.89 m/s**.
+
+Portanto, gostaríamos de um robô que tivesse como limite de velocidade máxima algo em torno de 3m/s. O problema é que isso num tangenciado 6S é praticamente inviável, já que:
+
+$$
+v_{max} = \frac{rpm \cdot r_{eixo} \cdot \pi}{30}
+$$
+
+E pra 3m/s, com um eixo de 8mm que é um tamanho realista:
+
+$$
+K_v = \frac{90}{0.004 \cdot \pi \cdot 3.7 \cdot N_{cells}}
+$$
+
+Isso significa que precisamos de um motor de **322 KV pra 6S** ou **483 KV pra 4S**. Vamos assumir que podemos dividir o KV de fábrica por $\sqrt{3}$, já que dá pra soldar os terminais em wye. Mesmo assim, falamos de motores de **557 KV em 6S** ou **836 KV em 4S**. Veja bem: o valor 4S é viável e existe, mas pra motores maiores em geral. O 6S é completamente sonho encontrar um motor de menos de 80g nessa dimensão. Isso nos põe num impasse (que não é tão impasse assim).
+
+### Opção 1: backtrack pra 4S
+
+A opção mais trivial. Simplesmente desistir do projeto 6S e usar uma bateria menor. É uma boa, honestamente, todo mundo faz 4S e com certeza usaríamos mais do motor. Porém, [como já vimos no post anterior](/pt/posts/ta-arrastando-mano), pra arma existe um ganho muito grande em usar 6S, até de um ponto de vista de eficiência e potencial do robô, então não gostaria de perder essa oportunidade. Em segundo lugar, a ideia inteira do robô é que seria um beetle 6S, então sinto que estou traindo minhas origens desistindo do feito. A priori acho ruim a ideia de voltarmos atrás nesse aspecto.
+
+### Opção 2: arma 6S, loc 4S
+
+Olha, me é bastante atraente essa ideia, mas eu considero muito arriscado colocar um buck entre a bateria e as ESCs da locomoção. É literalmente inserir um novo ponto de falha que não precisa existir, apenas numa busca por eficiência maior do uso dos motores. Talvez funcione e ainda pode ser estudado, até avaliado melhor com mais informação do budget de peso pré-projeto mecânico, mas a priori enxergo como uma forma de complicar o que não precisa ser complicado.
+
+### Opção 3: arrumar um brushless 6S de encapsulamento pequeno
+
+A grande dificuldade é que os motores menores de altas tensões tendem a ter KVs altos demais nessas famílias de pequenos encapsulamentos, como 2207, 2208 e 2214. Todos vão estar na faixa dos 1850 a 2750 KV, e isso daí é rápido demais pro que queremos fazer. Porém, nada impede de limitar na ESC e chamar de dia. Nas minhas pesquisas achei [esse 2207 de 1850 KV](https://pt.aliexpress.com/item/1005009524110745.html) que pesa míseros 33g.
+
+Ele é muito mais KV do que queremos, mas mudando a ligação dos terminais conseguimos algo minimamente factível pra um eixo de 8mm (apenas o triplo, ao invés de 6 vezes a velocidade teórica máxima). Eu entendo que não é ideal, mas também entendo que é o que pode ser feito nesse caso com os motores que temos disponíveis pra comprar e sem abrir mão de um tangenciamento. É possível também testar um "tangenciamento de dois estágios", mas com um foco muito grande no testar; não gosto da ideia de dobrar os pontos de falha na locomoção do projeto.
+
+Eu estou inclinado a seguir com a opção 3. A priori, o motor é esse porque fecha peso bem, tem um preço razoável, o KV é alto mas baixo o suficiente pra conseguirmos fazer as gambiarras de ressoldar os terminais e ter um motor competitivo.
+
+## A tal da arma
+
+O meu principal ponto de atenção pra dimensionar o motor da arma não foi no RPM final ou na energia potencial máxima acumulada, já que isso são aspectos que são sim objetivo, mas na prática são pouco palpáveis. Aqui, o ponto chave é ter um motor que consegue acelerar a arma a um ponto onde ela é perigosa antes do outro robô conseguir fazer um box rush.
+
+Qual o menor tempo de um box rush, você pode me perguntar. Bom, considerando o [limite físico de velocidade na areninha](/pt/posts/tudo-tem-limites#aceleração-e-velocidade) e que alguns robôs terão imãs que fazem esse limite ser superado, podemos apostar num box rush com $1.5 \cdot 3 = 4.5$ m/s numa diagonal de $2\sqrt{2} = 2.82$ m. Ou seja, o robô precisa acelerar a arma até uns 70% em 0.6s. Felizmente, aqui nossa calculadora brilha: podemos testar diferentes tamanhos de arma pra um undercutter com esse motor e analisar seu spinup, corrente de regime, e tudo mais.
+
+Pra isso, um motor de KV baixo funcionaria muito bem. Por recomendação do pessoal do TPU, testei o XING 2814 880KV (mesmo motor que apareceu no [post de arrasto](/pt/posts/ta-arrastando-mano)) e ele performou muito bem na calculadora, alcançando 90% da velocidade máxima em 0.6s, bem mais que o box rush.
+
+A corrente de regime tá alta, mas é de se esperar pra uma geometria pensada do nada. Ainda dá pra trabalhar bastante em cima da geometria pra diminuir esse aspecto também, especialmente com as considerações de arrasto e tentando diminuir o coeficiente da barra. O fato é que esse motor a primeiro momento parece funcionar bem pro que queria.
+
+## Conclusão
+
+Eu sei, eu sinto que esse post é uma traição ao aspecto de engenharia e embasamento do projeto. Mas eu também sinto que da forma como estava eu estava completamente congelado num limbo de decisões. Tomar uma primeira decisão, ainda que ruim, mas com um conjunto de embasamentos sólidos pra gente discutir, é uma forma muito boa de começar.
+
+Ainda tenho que calcular qual o consumo médio da loc com esses XINGs. Isso é difícil porque tá com diâmetro de eixo estimado, e seria preciso estimar o diâmetro da roda também pra encontrar o torque (e consequentemente a corrente média por loc). Mas é melhor que nada. Fica pra amanhã.
+
+Eu diria que se não tivesse mais nenhuma discussão, esse conjunto de motores seria razoável. O da arma eu tenho bastante confiança das escolhas tomadas, o da loc nem tanto, mas me parece sólido. O problema é que nos combates os limites são muito poucos, e o aspecto artístico fica cada vez mais em voga quando começamos a aprofundar no projeto. Tudo é meio "depende" e no fim do dia a gente tá usando um tanto de motor de drone pra girar barra de aço.
+
+## P.S.: e a bateria?
+
+Vamos estimar a corrente média pra esses motores pra dar uma olhada na bateria que vamos usar. Como a calculadora já estima o consumo da arma, vamos fazer a estimativa da locomoção.
+
+Primeiro, os aspectos mecânicos serão paramétricos. Em outras palavras, redução, raio da roda e raio do eixo do motor são descritos por:
+
+$$
+n = \frac{r_{roda}}{r_{motor}}
+$$
+
+Depois, precisamos encontrar o torque na roda em que o robô começa a derrapar, ou seja, o torque que supera o atrito do robô no chão. Pra isso:
+
+$$
+F_{atrito} = P_{roda} \cdot g \cdot \mu = \frac{1.340}{2} \cdot 9.8 \cdot 0.85 \approx 5.6
+$$
+
+$$
+T_{roda} = F_{atrito} \cdot r_{roda}
+$$
+
+$$
+T_{motor} = \frac{T_{roda}}{n} = \frac{F_{atrito} \cdot r_{roda}}{\frac{r_{roda}}{r_{motor}}} = F_{atrito} \cdot r_{motor}
+$$
+
+Então:
+
+$$
+T_{motor} = 5.6 \cdot r_{motor}
+$$
+
+Enfim, sabemos que a corrente máxima que o motor vai puxar pra começar a derrapar é:
+
+$$
+I_{max} = \frac{T_{motor}}{K_t} = \frac{K_v \cdot T_{motor}}{9.55} = 0.58 \cdot K_v \cdot r_{motor}
+$$
+
+Top demais. Temos a equação da corrente máxima por roda. Pra estimar o consumo podemos supor o worst case, que são 2.5 minutos ($t_{round}$) rodando no pico (o que vai ser nossa margem de segurança). O consumo da loc ($\kappa_{loc}$) fica:
+
+$$
+\kappa_{loc} = 2 \cdot I_{max} \cdot t_{round} = 2 \cdot 0.58 \cdot \frac{2.5}{60} \cdot K_v \cdot r_{motor}
+$$
+
+Portanto:
+
+$$
+\kappa_{loc} = 0.0483 \cdot K_v \cdot r_{motor}
+$$
+
+Ou seja, nosso consumo na loc depende apenas do motor e do raio do eixo de tangenciamento. Considerando o motor sugerido lá em cima com terminais ressoldados pra wye (ou seja, $K_v \approx 1070$) e um $r_{motor} \approx 0.004$, descobrimos o consumo da loc total como:
+
+$$
+\kappa_{loc} = 206 \text{ mAh}
+$$
+
+Agora olhando pra nossa arma monumental, com 10.7A de regime a luta inteira, podemos encontrar o $\kappa_{arma}$:
+
+$$
+\kappa_{arma} = 10.7 \cdot \frac{2.5}{60} = 446 \text{ mAh}
+$$
+
+Portanto, o consumo total vai ser:
+
+$$
+\kappa = \kappa_{loc} + \kappa_{arma} = 652 \text{ mAh}
+$$
+
+Isso com vários chutes altos e concessões, então pra terminarmos a luta com cerca de 20% da bateria (manter a saúde das células) seria legal algo em torno de 815 mAh. Porém não existem baterias de 815 mAh, então temos duas opções: 750 mAh ou 850 mAh. Como essa estimativa aumenta muito o consumo da loc pra simplificar, eu fico tentado a ir pro 750 pra tentar ganhar o máximo de peso possível, mas tem que pesquisar mais baterias a priori.
+
+Um adendo: eu considerei 2.5min pra ter margem de teste e tudo mais, mas na prática a luta é de 2min. Jogando isso nas equações temos 522 mAh de demanda; nesse caso poderíamos usar uma bateria de 650 mAh e ficaríamos numa margem bem boa.

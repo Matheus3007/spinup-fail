@@ -1,0 +1,22 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft && data.lang === 'pt'))
+  .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
+
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+---
+<BaseLayout title="Posts · spinup.fail">
+  <h1>Posts</h1>
+  <p class="meta">Texto longo: o que eu construí, o que funcionou, o que não funcionou.</p>
+  <ul class="entry-list">
+    {posts.map((p) => (
+      <li>
+        <a href={`/pt/posts/${p.data.translationKey ?? p.id}`}><span class="title">{p.data.title}</span></a>
+        <div class="meta">{fmt(p.data.publishedAt)}{p.data.project && ` · ${p.data.project}`}</div>
+        <div class="summary">{p.data.summary}</div>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

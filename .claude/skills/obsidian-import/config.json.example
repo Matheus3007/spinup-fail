@@ -1,0 +1,8 @@
+{
+  "vaultPath": "/Users/rezemath/Documents/Obsidian/MakerVault",
+  "postsDir": "src/content/posts",
+  "updatesDir": "src/content/updates",
+  "islandsDir": "src/components/islands",
+  "registryPath": "src/components/islands/REGISTRY.md",
+  "publicAssetsDir": "public/imported"
+}

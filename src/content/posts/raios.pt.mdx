@@ -1,0 +1,83 @@
+---
+type: post
+title: "Raios!"
+summary: Por que um horizontal supersônico não precisa girar tão rápido quanto um vertical pra bater mais forte. A matemática do "fator de vantagem" entre as duas geometrias.
+publishedAt: 2026-01-05
+updatedAt: 2026-01-05
+project: ReBot
+tags: ["combat-robotics", "rebot", "weapons", "horizontal", "vertical"]
+lang: pt
+translationKey: raios
+---
+
+import HorizontalVsVerticalEnergy from '../../components/islands/HorizontalVsVerticalEnergy.tsx';
+
+**Premissa: horizontais batem mais forte.**
+
+Um horizontal é uma grande aposta na areninha. Existe um atrativo muito grande quando se pensa no potencial de destruição. De maneira geral, um horizontal tende a ser o formato que maximiza essa variável. Porém, quando olhamos a equação de energia potencial rotacional, algo se destaca:
+
+$$
+E_{rotacional} = \frac{I \omega^2}{2}
+$$
+
+Se eu dobrar meu momento de inércia, eu dobro minha energia potencial. Agora, se eu dobrar a velocidade da minha arma, eu quadruplico minha energia potencial. Nessa velocidade o torque pelo arrasto acaba sendo relevante (e foi tema do [post anterior](/pt/posts/ta-arrastando-mano)), mas esse ainda não é o foco. Meu ponto é que o ganho marginal por aumentar a velocidade é, em teoria, bem maior que o de aumentar o raio.
+
+Mas é mesmo? Vamos presumir que meu robô vai ter uma barra como arma, assim conseguimos escrever a equação da $E_{rotacional}$ em função do raio ao invés do momento de inércia:
+
+$$
+I_{cuboide} = \frac{m \cdot (raio^2 + profundidade^2)}{12}
+$$
+
+Portanto, considerando a barra como um paralelepípedo arbitrário, a energia rotacional em função das dimensões é algo como:
+
+$$
+E_{rotacional} = \frac{m \cdot (raio^2 + profundidade^2) \cdot \omega^2}{24}
+$$
+
+E a massa da barra:
+
+$$
+m = \rho_{aco} \cdot altura \cdot raio \cdot profundidade
+$$
+
+Substituindo:
+
+$$
+E_{rotacional} = \frac{\rho_{aco} \cdot h \cdot raio \cdot profundidade \cdot (raio^2 + profundidade^2) \cdot \omega^2}{24}
+$$
+
+## Comparando geometrias
+
+Beleza, isso aqui não vai levar a gente muito longe sozinho, mas a gente pode plugar uns valores pra comparar a energia potencial de duas barras: uma vertical e outra horizontal.
+
+Vamos assumir que o nosso horizontal vai ter um raio 3x maior que o vertical, o que não é muito surreal: em geral robôs de briga não são muito altos (foco no _em geral_), então verticais tendem a ter raios menores, enquanto o único limitador dos horizontais é o peso e o quão distante eles conseguem deixar o eixo da arma das rodas.
+
+$$
+\frac{r_h}{r_v} = 3 \quad \vert \quad \frac{E_{p,hori}}{E_{p,vert}} = \frac{27 \cdot raio^2 + 3 \cdot profundidade^2}{raio^2 + profundidade^2} = f_v
+$$
+
+Isso considerando que a velocidade de rotação dos dois é a mesma. No caso isso é mentira, porque em geral o vertical vai girar bem mais rápido que o horizontal, justamente por ser bem mais fácil girar uma barra de 75g a 40k rpm do que uma de 150g. Mas só a título de análise, essa é a equação pro que eu vou chamar de **fator de vantagem** ($f_v$): o quanto mais energia potencial um design consegue armazenar que o outro.
+
+Agora vamos adicionar o fator que falta, a diferença de velocidade:
+
+$$
+d_v = \frac{\omega_{hori}}{\omega_{vert}}
+$$
+
+E aí temos $f_{vd} = f_v \cdot d_v^2$. Mexa nos sliders abaixo (raio do horizontal, profundidade da barra, razão de raios e razão de velocidades) pra ver onde o horizontal ganha. O eixo é o $r_h$ porque é a variável que você, projetando, escolhe; o $r_v$ é só o raio do oponente proporcional, mostrado no readout:
+
+<HorizontalVsVerticalEnergy client:visible lang="pt" />
+
+A linha tracejada em $f_{vd} = 1$ é o break-even: tudo acima dela, o horizontal bate mais forte. Pra ter uma noção:
+
+- Com $r_h/r_v = 3$ e $d_v = 1$ (mesma velocidade), o horizontal sempre tem _no mínimo_ 27x mais potencial de porrada.
+- Com $r_h/r_v = 3$ e $d_v = 1/3$ (vertical 3x mais rápido), a vantagem cai pra 3x. Continua ganhando.
+- Com $r_h/r_v = 2$ e $d_v = 0.7$ (cenário modesto), o horizontal ainda bate quase 4x mais forte.
+
+E não é só a energia bruta: o _bite_ de uma arma mais lenta tende a ser maior, então teremos mais transferências completas de energia (porradas) e menos transferências parciais (petelecos).
+
+## Onde isso me leva
+
+Existem outras considerações que valem ser feitas. O arrasto nessa velocidade vai impactar na corrente de regime e no tempo de aceleração da arma. Também é interessante dimensionar a transferência de energia. Mas, de maneira geral, esse post é só uma análise simples do quanto o tamanho da arma afeta a "força" do robô, se for a única diferença entre geometrias.
+
+Em outras palavras, esse é o post que justifica a viabilidade de um horizontal. Eu entendo que foi uma simplificação nojenta considerando que tudo é uma barra, e que sim, o momento de inércia de um vertical real (drum, eggbeater) é bem maior que o de uma barra equivalente. Mas não é uma análise descartável, já que conseguimos ver que sim, um horizontal tem potencial pra transferir bem mais energia que um vertical mesmo girando mais devagar. Mesmo que a diferença de geometria pra um drum signifique que o momento de inércia do vertical dobre, ainda estaríamos falando de uma porrada quase 2x maior. Então podemos sim assumir que um horizontal bem feito tem muito potencial.

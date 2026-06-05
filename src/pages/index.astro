@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime())
+  .slice(0, 5);
+
+const updates = (await getCollection('updates', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 5);
+
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+---
+<BaseLayout title="spinup.fail" description="Maker projects, robots, and the things that broke along the way.">
+  <h1>spinup.fail</h1>
+  <p>Maker projects, robots, and the things that broke along the way.</p>
+
+  <h2>Latest posts</h2>
+  <ul class="entry-list">
+    {posts.map((p) => (
+      <li>
+        <a href={`/posts/${p.id}`}><span class="title">{p.data.title}</span></a>
+        <div class="meta">{fmt(p.data.publishedAt)}{p.data.project && ` · ${p.data.project}`}</div>
+        <div class="summary">{p.data.summary}</div>
+      </li>
+    ))}
+    {posts.length === 0 && <li class="meta">nothing yet</li>}
+  </ul>
+
+  <h2>Recent updates</h2>
+  <ul class="entry-list">
+    {updates.map((u) => (
+      <li>
+        <a href={`/updates/${u.id}`}>
+          <span class="title">{u.data.title ?? `${u.data.project} · ${fmt(u.data.date)}`}</span>
+        </a>
+        <div class="meta">{fmt(u.data.date)} · {u.data.project}{u.data.mood && ` · ${u.data.mood}`}</div>
+      </li>
+    ))}
+    {updates.length === 0 && <li class="meta">nothing yet</li>}
+  </ul>
+</BaseLayout>

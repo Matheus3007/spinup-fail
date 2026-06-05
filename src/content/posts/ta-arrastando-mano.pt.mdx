@@ -1,0 +1,151 @@
+---
+type: post
+title: "Tá arrastando mano"
+summary: O arrasto aerodinâmico não é só relevante na arma de um undercutter, é o fator limitador. Derivando a velocidade real da barra, comparando 4S com 6S, e descobrindo onde a relação volt-pra-rpm para de pagar.
+publishedAt: 2025-12-17
+updatedAt: 2025-12-17
+project: ReBot
+tags: ["combat-robotics", "rebot", "weapons", "aerodynamics"]
+lang: pt
+translationKey: ta-arrastando-mano
+---
+
+import WeaponDragRpm from '../../components/islands/WeaponDragRpm.tsx';
+
+Nesse assunto de constraints e limitações, eu comecei a procurar como saber o limite real de velocidade que uma arma pode assumir dada sua geometria e a potência do motor que usamos, já que certamente não é tão simples quanto dizer que
+
+$$
+rpm_{arma} = K_v \cdot V
+$$
+
+O ponto desse post é mostrar que o arrasto é sim relevante quando começamos a girar as coisas muito rápido, especialmente quando essa coisa tem uma grande área de superfície, como a barra de um undercutter. Essa info vai ser relevante pra evitar um sobredimensionamento do motor da arma, e talvez seja essencial pra definir a tensão da bateria. Vamos lá.
+
+## Reta de torque do motor
+
+Considerando que o torque é proporcional à velocidade do motor, podemos definir a reta de torque em um motor elétrico assim:
+
+$$
+\tau(\omega) = \tau_{stall} \cdot \left(1 - \frac{\omega}{\omega_{vazio}}\right)
+$$
+
+Beleza, já temos uma equação que define o torque no eixo dada uma velocidade, em função de duas constantes. Em geral o torque de stall e a velocidade em vazio do motor são valores dados pelo fabricante, mas partindo do princípio que só temos KV (rpm/v) como informação, dá pra encontrar todos os valores só com o KV:
+
+$$
+\omega_{vazio} = V_{bat} \cdot K_v
+$$
+
+$$
+\tau_{stall} = K_t \cdot I_{stall}
+$$
+
+Sendo que $K_t$ pode ser encontrado através de:
+
+$$
+K_t = \frac{1}{K_v^{rad/s}} = \frac{1}{K_v \cdot \frac{\pi}{30}} = \frac{9.55}{K_v}
+$$
+
+## Arrasto na barra
+
+Olhando para o arrasto, temos a equação da força de arrasto $F$:
+
+$$
+F = K \cdot \rho \cdot v^2 \cdot h_{barra} \cdot r
+$$
+
+Porém isso é pra um retângulo se movendo linearmente, e nesse caso a barra gira. Considerando um trecho infinitesimal da barra (sim, nós vamos fazer isso):
+
+$$
+dF = C_d \cdot \rho \cdot (\omega \cdot r)^2 \cdot h_{barra} \cdot dr
+$$
+
+$$
+d\tau = r \cdot dF = C_d \cdot \rho \cdot \omega^2 \cdot r^3 \cdot h_{barra} \cdot dr
+$$
+
+Pra a barra, integramos:
+
+$$
+\tau_{drag} = \int_{0}^{R} \frac{1}{2} \rho \cdot C_d \cdot h \cdot \omega^2 \cdot r^3 \, dr
+$$
+
+$$
+\tau_{drag} = \frac{1}{8} \rho \cdot C_d \cdot h \cdot \omega^2 \cdot R^4
+$$
+
+Isso é pra uma única "pá". Pra uma arma assimétrica com $r_{dente}$ pro raio do dente e $r_{cp}$ pro raio do contrapeso, o arrasto em função da velocidade fica:
+
+$$
+\tau_{drag}(\omega) = \frac{1}{8} K \rho h (r_{dente}^4 + r_{cp}^4) \cdot \omega^2
+$$
+
+Pra encurtar, vamos chamar aquele trambolho ali de constante de sistema $K_s$:
+
+$$
+\tau_{drag}(\omega) = K_s \cdot \omega^2
+$$
+
+## Velocidade terminal
+
+Dado que temos o torque do motor e o torque resultante do arrasto, podemos estabelecer a equação que encontra a velocidade terminal da barra igualando um ao outro (note que esta medida ainda será maior que a final, porque não estamos considerando perdas do sistema por atrito):
+
+$$
+\tau_{drag} = \tau_{motor}
+$$
+
+$$
+\tau_{stall} - \frac{\tau_{stall}}{\omega_{vazio}} \cdot \omega_{real} = K_s \cdot \omega_{real}^2
+$$
+
+Finalmente, podemos escrever a equação do $\omega_{real}$:
+
+$$
+\omega_{real} = \frac{-\left(\frac{\tau_{stall}}{\omega_{vazio}}\right) + \sqrt{\left(\frac{\tau_{stall}}{\omega_{vazio}}\right)^2 + 4 \cdot K_s \cdot \tau_{stall}}}{2 \cdot K_s}
+$$
+
+Onde:
+
+$$
+K_s = \frac{1}{8} \rho C_d h \left(r_{dente}^4 + r_{cp}^4\right)
+$$
+
+## Plugando valores
+
+Beleza, vamos travar tudo como constante e dar uma olhada na função $N_{real}(N_{vazio})$, onde $N$ é o número de RPMs. Pra não precisar inventar valores demais, vou considerar o projeto com um motor [iFlight XING 2814 880KV](https://pt.aliexpress.com/item/1005009954781645.html). Escolhi esse motor porque é próximo do que o pessoal do TPU usa (com mais KV, mas pensando em abaixar porque não sentiu falta):
+
+- Barra retangular, $C_d \approx 1.2$
+- $r_{dente} = 0.14$ m
+- $r_{cp} = 0.04$ m
+- $h = 0.015$ m
+- $\tau_{stall} = K_t \cdot I_{stall} = K_t \cdot \frac{V_{batt}}{R_{int}}$
+  - $\tau_{4S} = 3.57$ N·m
+  - $\tau_{6S} = 5.35$ N·m
+- $\omega_{vazio,4S} = 1438$ rad/s
+- $\omega_{vazio,6S} = 2156.4$ rad/s
+- $\rho = 1.225$ kg/m³
+
+Conversando com outro combateiro depois de publicar isso, ele apontou que minha conta original do $K_s$ tava chutando um valor 2x maior do que a fórmula realmente entrega. Refazendo:
+
+$$
+K_s = \frac{1}{8} \cdot 1.225 \cdot 1.2 \cdot 0.015 \cdot (0.14^4 + 0.04^4) \approx 1.066 \cdot 10^{-6}
+$$
+
+Então é com esse $K_s$ que vamos seguir, e é o que o gráfico abaixo está plotando. A conclusão qualitativa não muda (o arrasto ainda é o que dita o jogo), mas os números absolutos sim.
+
+<WeaponDragRpm client:visible lang="pt" />
+
+O ponto principal aqui é o seguinte:
+
+1. **A velocidade na barra cai exponencialmente com a velocidade em vazio.** A relação tá longe de linear, e um projeto eficiente deve evitar a zona de _diminishing returns_.
+2. **O ganho de 6S existe, e existe forte.** Primeiro, conseguimos operar perto do regime do 4S usando uma fração bem menor do throttle do 6S. Mexa no slider de throttle no gráfico pra ver onde elas se cruzam: tem uma margem grande pra operar abaixo do limite. Segundo, isso me dá um spinup absurdamente mais rápido. Pra ficar perigoso eu não preciso mais do _spinup to 100_, _spinup to 50_ já me deixa perigoso, daí pra frente é algo que o mesmo robô em 4S jamais conseguiria fazer. Terceiro, a discrepância só cresce conforme a arma se torna menos aerodinâmica, ou seja: idealmente, quanto maior a barra e menos aerodinâmica, mais vantagem em utilizar 6S.
+
+## Onde quero chegar
+
+Meu ponto desde que comecei a pesquisar e trabalhar neste post era apontar que algo que desconsideramos na Thunder desde que me entendo por gente, e na graduação desde sempre, esse famigerado arrasto, é algo que na verdade afeta E MUITO nos combates, especialmente quando eles são menores e giram a barra rápido. Na verdade, o arrasto se torna O fator limitador da arma, nosso _upper bound_, por isso devemos projetar a geometria inteira considerando ele e as implicações que isso tem na elétrica.
+
+Não tô falando de fazer a arma antes da eletrônica do projeto, longe disso, mas com essa noção já dá pra entender o que o motor vai conseguir fornecer pra um robô de arma parecida com a que queremos.
+
+## Coda: redução
+
+Depois de publicar, o mesmo amigo que catou o erro no $K_s$ apontou outra coisa que eu tinha deixado fora: a equação acima assume motor direto no eixo da arma. Se você coloca um fator de redução $n$ na conta, a velocidade terminal da barra vira função desse $n$, e existe um ótimo, ou seja, há uma redução que maximiza a velocidade real da arma considerando o arrasto. No caso dele, com os valores acima, esse ótimo ficou perto de $n = 0.77$. Em outras palavras: pra essa geometria, _aumentar_ a velocidade da arma com um redutor é teoricamente vantajoso.
+
+Vou explorar isso num post separado, porque é cabeludo o suficiente pra merecer.

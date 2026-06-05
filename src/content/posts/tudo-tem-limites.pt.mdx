@@ -1,0 +1,68 @@
+---
+type: post
+title: "Tudo tem limites"
+summary: Saindo da analysis paralysis com as constraints do projeto, project-wide e system-wide. Um teto pra cada eixo antes do CAD começar.
+publishedAt: 2025-12-15
+updatedAt: 2025-12-16
+project: ReBot
+tags: ["combat-robotics", "rebot", "constraints"]
+lang: pt
+translationKey: tudo-tem-limites
+---
+
+Conversando com um amigo, notei que estava preso num processo de _analysis paralysis_ com esse projeto e eu quero muito que saia do papel, então pedi algumas dicas de como o Micras começou a ser projetado e ele trouxe algo que serve de um bom ponto de partida: o Micras começou com **constraints**, os limites da categoria e eventualmente do que o projeto deveria alcançar dentro dela.
+
+Com isto em mente, podemos aplicar o mesmo principio ao nosso querido rebite e estabelecer uma série de constraints que vão limitar nosso conjunto universo para este problema. Então vamos para as limitações que eu identifiquei até o momento.
+
+## Constraints
+
+Considere essas constraints como limites máximos, não objetivos. Por definição são project-wide ao invés de system-wide, e afetam o design do projeto como um todo. É a partir delas que encontraremos as constraints system-wide.
+
+Pra simplificar a compreensão, vou definir aqui em poucas palavras dois termos que vão ajudar a guiar o projeto eventualmente:
+
+- **Project-Wide Constraints (PWCs ou PCs):** limitações básicas de projeto inteiro que afetam todo o projeto.
+- **System-Wide Constraints (SWCs ou SWs):** limitações de um sistema específico. Elas podem vir de um componente que escolhemos para outro sistema, como um motor definindo a esc ou a bateria, ou serem estabelecidas por um componente que escolhemos para aquele sistema.
+  - Ainda que a SWC seja de um sistema, ela pode ser definida por outra (ou outras) SWC de um sistema adjacente.
+
+### PWCs
+
+É difícil estabelecer hard-limits da categoria porque nos combates, de uma forma ou de outra, o único limite é o peso. Então eu tô tentando tirar leite de pedra aqui pra encontrar todas as limitações que eu tenho no fundo da minha cabeça quando penso em como fazer o projeto. Por hora, temos isso:
+
+| Constraint                     |                             Valor |
+|:------------------------------ | ---------------------------------:|
+| Peso                           |                       1360 gramas |
+| Duração da bateria             |                       2.5 minutos |
+| Preço total*                   |                          5000 BRL |
+| Deadline**                     |                        2026-09-01 |
+| Disponibilidade de componentes | LCSC / AliExpress / Varejo Brasil |
+
+- *Preço total considera o custo de ferramentas, rádio, reposição, o gasto completo para o projeto.
+- **A deadline 1 de Setembro de 2026 é pra ter uma margem de 30 dias apenas de teste e validação **no pior dos casos** considerando uma estréia na Robochallenge, mas poderia ser algo como 30 dias antes da competição de estreia, ela qual for. Eu não vou levar robô que não aguenta 2min de porrada.
+
+### Aceleração e velocidade
+
+Depois que rascunhei a tabela acima, conversando com outro combateiro, surgiu a constraint que eu não tinha colocado e que provavelmente é a mais interessante: o limite de aceleração. Sem imã, com coeficiente de atrito menor que 1, a aceleração máxima sem derrapar é só:
+
+$$
+a_{max} = \mu \cdot g
+$$
+
+Esse valor sozinho já diz alguma coisa, mas não acho que vale a pena dimensionar motor pelo torque máximo de derrapagem, porque tem ganho real em conseguir manter um torque próximo desse pico em velocidades acima de zero. O valor de verdade aparece quando entra um limite de espaço (no nosso caso, a arena). Assumindo motor super-dimensionado que mantém esse torque ao longo de todo o percurso, dá pra tirar uma velocidade máxima a partir da qual não faz mais sentido projetar pra cima:
+
+$$
+v_{max}^2 = a_{max} \cdot l
+$$
+
+$$
+v_{max} = \sqrt{\mu \cdot g \cdot l}
+$$
+
+Num caso extremo (μ = 0.95, l = 2.83m, ou seja, atravessando a arena inteira na diagonal), $v_{max} \approx$ **5.14 m/s**. Num cenário mais realista (μ = 0.85, l = 1m, distância típica entre robôs), $v_{max} \approx$ **2.89 m/s**. Esse último é provavelmente o número que vai entrar no dimensionamento, porque combate raramente é um sprint reto de 2,8 metros.
+
+A partir disso a gente tem algo bem mais útil que "queremos um robô rápido": tem um teto teórico, e qualquer motor que passe muito disso é peso e custo gastos por nada.
+
+## E agora?
+
+O sistema que podemos utilizar para definir mais PWCs são os motores. Eles vão definir diversas características elétricas e mecânicas do sistema, afinal, são os "endpoints" do robô (ou seja, as coisas que o sistema é de fato projetado para controlar). E agora, com o teto de velocidade do tópico anterior, dá pra começar a brigar com torque-vs-rpm sem chutar.
+
+Portanto, vamos definir o que vamos usar de motor e porque vamos usar eles. Aguardem um post na aba de elétrica do rebot.

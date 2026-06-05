@@ -1,0 +1,139 @@
+---
+type: post
+title: "In practice, theory is something else."
+summary: Out of the analysis limbo, picking motors. Why a 6S direct-tangentially-driven loc is basically infeasible, the path that's left, and the weapon motor that hits spinup before a box rush can land.
+publishedAt: 2026-01-09
+updatedAt: 2026-01-14
+project: ReBot
+tags: ["combat-robotics", "rebot", "motors", "electronics"]
+lang: en
+translationKey: na-pratica-a-teoria-e-outra
+---
+
+Everything needs a starting point. If I keep writing posts with studies and analyses of the various baroque aspects of combat robotics, this robot is never leaving the page. I think we have enough knowledge to make a preliminary motor choice. Unfortunately, these aren't yet _the best_ physically possible motors for this situation, but the choice is being made consciously and aimed at the limits we've found.
+
+I'll cover the loc first, based on the max-velocity limit (and assuming the shaft can't be smaller than 6mm), then the weapon, with the goal of having a "0 to dangerous" spinup faster than the worst-case box rush in the arena.
+
+## The loc
+
+In the rush to commit to a motor, I ran into a battery problem. The guideline I'm using for the loc motors is the [arena velocity limit](/posts/everything-has-limits#acceleration-and-velocity) from the constraints post:
+
+> Extreme case (μ = 0.95, l = 2.83m), $v_{max} \approx$ **5.14 m/s**. More realistic (μ = 0.85, l = 1m), $v_{max} \approx$ **2.89 m/s**.
+
+So we'd want a robot with a max-velocity ceiling around 3 m/s. The problem is that this is basically infeasible on a 6S tangentially-driven setup, since:
+
+$$
+v_{max} = \frac{rpm \cdot r_{eixo} \cdot \pi}{30}
+$$
+
+For 3 m/s with an 8mm shaft (a realistic size):
+
+$$
+K_v = \frac{90}{0.004 \cdot \pi \cdot 3.7 \cdot N_{cells}}
+$$
+
+That means we need a motor of **322 KV for 6S** or **483 KV for 4S**. Let's assume we can divide the factory KV by $\sqrt{3}$ since we can rewire the terminals into wye. Even then, we're talking **557 KV at 6S** or **836 KV at 4S**. Look: the 4S number is feasible and exists, but for larger motors generally. The 6S number is straight-up wishful thinking, finding a motor under 80g in that size at that KV is fantasy. That puts us in a deadlock (which isn't really that much of a deadlock).
+
+### Option 1: backtrack to 4S
+
+The most trivial option. Just give up on the 6S build and use a smaller battery. Honestly, it's a fine choice, everyone runs 4S, and we'd certainly be using more of the motor. But [as we saw in the previous post](/posts/its-dragging-bro), the weapon has a huge gain from running 6S, both from an efficiency and a robot-potential standpoint, and I don't want to give that up. Second, the whole idea of this robot was to be a 6S beetle, so I feel like I'm betraying my origins by walking back on it. Pretty much, I don't like the idea of backtracking here.
+
+### Option 2: 6S weapon, 4S loc
+
+This idea is genuinely tempting, but I think it's too risky to put a buck converter between the battery and the loc ESCs. It's literally introducing a new failure point that doesn't need to exist, just to chase higher motor utilization. It might work and could still be studied, even reassessed once we have better weight-budget data pre-mechanical-design, but for now I see it as overcomplicating something that doesn't need to be complicated.
+
+### Option 3: find a small-package 6S brushless
+
+The big difficulty is that smaller high-voltage motors tend to have KVs that are way too high in those small-package families like 2207, 2208, 2214. They'll all be in the 1850 to 2750 KV range, and that's way too fast for what we want to do. But nothing stops us from limiting in the ESC and calling it a day. In my research I found [this 2207 at 1850 KV](https://pt.aliexpress.com/item/1005009524110745.html), at a measly 33g.
+
+It's much more KV than we want, but rewiring the terminals gets us something at least feasible for an 8mm shaft (only triple, instead of six times the theoretical max velocity). I get that it's not ideal, but I also get that it's what's possible with the motors we can actually buy without giving up tangential drive. We could also test a "two-stage tangential drive" but with heavy emphasis on _test_, I don't like the idea of doubling the failure points in the loc.
+
+I'm leaning towards option 3. For now the motor is this one because it makes weight well, has a reasonable price, the KV is high but low enough to pull off the wye-rewire trick and end up with a competitive motor.
+
+## The weapon
+
+My main concern when sizing the weapon motor wasn't final RPM or peak stored energy. Those are objective metrics, but in practice they're hard to feel. The key here is having a motor that can spin the weapon up to dangerous before the other robot can pull off a box rush.
+
+What's the shortest possible box rush, you may ask. Well, considering the [physical velocity limit in the arena](/posts/everything-has-limits#acceleration-and-velocity) and that some robots will have magnets that exceed it, we can bet on a box rush at $1.5 \cdot 3 = 4.5$ m/s on a $2\sqrt{2} = 2.82$ m diagonal. That means the robot needs to spin the weapon to about 70% in 0.6s. Lucky for us, this is where our calculator shines: we can test different weapon sizes for an undercutter with this motor and analyze its spinup, steady-state current, all of that.
+
+For this, a low-KV motor would work well. On the TPU folks' recommendation, I tested the XING 2814 880KV (the same motor that showed up in [the drag post](/posts/its-dragging-bro)) and it performed very well in the calculator, hitting 90% of max velocity in 0.6s, well past the box rush.
+
+The steady-state current is high, but that's expected for a geometry I dreamed up out of thin air. There's plenty of room to work on the geometry to bring that down too, especially with the drag considerations and trying to lower the bar's coefficient. The point is, this motor seems to work well for what I wanted on first pass.
+
+## Conclusion
+
+I know, this post feels like a betrayal of the engineering and grounding aspect of the project. But I also feel that the way things were, I was completely frozen in a decision limbo. Making a first decision, even a bad one, but with a solid set of arguments to discuss, is a really good way to get going.
+
+I still need to calculate the average loc consumption with these XINGs. That's hard because the shaft diameter is estimated and the wheel diameter would have to be estimated too, to find the torque (and so the average current per loc). But it's better than nothing. That's tomorrow's problem.
+
+I'd say if there were no further discussion, this set of motors would be reasonable. The weapon one I'm pretty confident about. The loc one less so, but it seems solid. The problem is that in combat there are very few hard limits, and the artistic side starts dominating the deeper you go. Everything is sort of "it depends" and at the end of the day we're using a pile of drone motors to spin a steel bar.
+
+## P.S.: and the battery?
+
+Let's estimate the average current for these motors to get a feel for the battery we'll need. Since the calculator already estimates weapon consumption, let's estimate the locomotion side.
+
+First, the mechanical side will be parametric. Reduction, wheel radius, and motor shaft radius are described by:
+
+$$
+n = \frac{r_{roda}}{r_{motor}}
+$$
+
+Then we need to find the wheel torque at which the robot starts to slip, the torque that overcomes the robot's friction with the floor:
+
+$$
+F_{atrito} = P_{roda} \cdot g \cdot \mu = \frac{1.340}{2} \cdot 9.8 \cdot 0.85 \approx 5.6
+$$
+
+$$
+T_{roda} = F_{atrito} \cdot r_{roda}
+$$
+
+$$
+T_{motor} = \frac{T_{roda}}{n} = \frac{F_{atrito} \cdot r_{roda}}{\frac{r_{roda}}{r_{motor}}} = F_{atrito} \cdot r_{motor}
+$$
+
+So:
+
+$$
+T_{motor} = 5.6 \cdot r_{motor}
+$$
+
+And the max current the motor will pull to start slipping is:
+
+$$
+I_{max} = \frac{T_{motor}}{K_t} = \frac{K_v \cdot T_{motor}}{9.55} = 0.58 \cdot K_v \cdot r_{motor}
+$$
+
+Beautiful. We have the max-current-per-wheel equation. To estimate consumption we can assume worst case: 2.5 minutes ($t_{round}$) running at peak (which becomes our safety margin). The loc consumption ($\kappa_{loc}$) is:
+
+$$
+\kappa_{loc} = 2 \cdot I_{max} \cdot t_{round} = 2 \cdot 0.58 \cdot \frac{2.5}{60} \cdot K_v \cdot r_{motor}
+$$
+
+Therefore:
+
+$$
+\kappa_{loc} = 0.0483 \cdot K_v \cdot r_{motor}
+$$
+
+Loc consumption depends only on the motor and the tangential-drive shaft radius. With the motor suggested above with terminals rewired to wye ($K_v \approx 1070$) and $r_{motor} \approx 0.004$, total loc consumption comes out to:
+
+$$
+\kappa_{loc} = 206 \text{ mAh}
+$$
+
+Now looking at our monumental weapon, at 10.7A steady-state for the whole fight, we get $\kappa_{arma}$:
+
+$$
+\kappa_{arma} = 10.7 \cdot \frac{2.5}{60} = 446 \text{ mAh}
+$$
+
+So total consumption is:
+
+$$
+\kappa = \kappa_{loc} + \kappa_{arma} = 652 \text{ mAh}
+$$
+
+That's with several high-side guesses and concessions, so to finish the fight with around 20% battery left (preserving cell health) we'd want something around 815 mAh. There aren't 815 mAh batteries, so the choices are 750 mAh or 850 mAh. Since this estimate inflates the loc consumption a lot for the sake of simplicity, I'm tempted to go with the 750 to grab as much weight margin as possible, but more battery research is needed first.
+
+A side note: I considered 2.5 minutes for testing margin and so on, but the actual fight is 2 minutes. Plugging that into the equations gives 522 mAh of demand. In that case we could use a 650 mAh battery and end up in a comfortable spot.

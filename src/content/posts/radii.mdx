@@ -1,0 +1,83 @@
+---
+type: post
+title: "Radii!"
+summary: Why a supersonic horizontal doesn't have to spin as fast as a vertical to hit harder. The math behind the "advantage factor" between the two geometries.
+publishedAt: 2026-01-05
+updatedAt: 2026-01-05
+project: ReBot
+tags: ["combat-robotics", "rebot", "weapons", "horizontal", "vertical"]
+lang: en
+translationKey: raios
+---
+
+import HorizontalVsVerticalEnergy from '../../components/islands/HorizontalVsVerticalEnergy.tsx';
+
+**Premise: horizontals hit harder.**
+
+A horizontal is a big bet in the arena. There's a lot of pull to the destruction-potential side of things. Generally, a horizontal tends to be the geometry that maximizes that variable. But when you look at the rotational energy equation, something stands out:
+
+$$
+E_{rotacional} = \frac{I \omega^2}{2}
+$$
+
+If I double my moment of inertia, I double my potential energy. But if I double my weapon's velocity, I quadruple my potential energy. At those speeds, drag torque starts mattering (and was the topic of the [previous post](/posts/its-dragging-bro)), but that's not the focus here. My point is that the marginal gain from increasing velocity is, in theory, a lot bigger than from increasing radius.
+
+Is it though? Let's assume my robot will use a bar as a weapon, so we can write $E_{rotacional}$ as a function of radius rather than moment of inertia:
+
+$$
+I_{cuboide} = \frac{m \cdot (raio^2 + profundidade^2)}{12}
+$$
+
+So, treating the bar as an arbitrary cuboid, rotational energy as a function of dimensions is something like:
+
+$$
+E_{rotacional} = \frac{m \cdot (raio^2 + profundidade^2) \cdot \omega^2}{24}
+$$
+
+And the bar's mass:
+
+$$
+m = \rho_{aco} \cdot altura \cdot raio \cdot profundidade
+$$
+
+Substituting:
+
+$$
+E_{rotacional} = \frac{\rho_{aco} \cdot h \cdot raio \cdot profundidade \cdot (raio^2 + profundidade^2) \cdot \omega^2}{24}
+$$
+
+## Comparing geometries
+
+Alright, this won't take us very far on its own, but we can plug in numbers to compare the potential energy of two bars: one vertical, one horizontal.
+
+Let's assume our horizontal will have a radius 3× larger than the vertical, which isn't far-fetched: combat robots usually aren't very tall (focus on _usually_), so verticals tend to have smaller radii, while the only limit on horizontals is weight and how far they can push the weapon shaft from the wheels.
+
+$$
+\frac{r_h}{r_v} = 3 \quad \vert \quad \frac{E_{p,hori}}{E_{p,vert}} = \frac{27 \cdot raio^2 + 3 \cdot profundidade^2}{raio^2 + profundidade^2} = f_v
+$$
+
+This assumes both spin at the same speed. In reality that's a lie, since the vertical generally spins much faster than the horizontal, just because it's way easier to spin a 75g bar at 40k rpm than a 150g one. But for the sake of the analysis, this is the equation for what I'll call the **advantage factor** ($f_v$): how much more potential energy one design can store than the other.
+
+Now let's add the missing factor, the velocity ratio:
+
+$$
+d_v = \frac{\omega_{hori}}{\omega_{vert}}
+$$
+
+So we get $f_{vd} = f_v \cdot d_v^2$. Drag the sliders below (horizontal's radius, bar depth, radius ratio, velocity ratio) to see where the horizontal wins. The axis is $r_h$ because that's the one you, the designer, are choosing; $r_v$ is just the proportionally-sized opponent, shown in the readout:
+
+<HorizontalVsVerticalEnergy client:visible />
+
+The dashed line at $f_{vd} = 1$ is break-even: anything above it, the horizontal hits harder. To get a feel for it:
+
+- With $r_h/r_v = 3$ and $d_v = 1$ (same speed), the horizontal always has _at least_ 27× more potential energy.
+- With $r_h/r_v = 3$ and $d_v = 1/3$ (vertical 3× faster), the advantage drops to 3×. Still wins.
+- With $r_h/r_v = 2$ and $d_v = 0.7$ (a modest scenario), the horizontal still hits almost 4× harder.
+
+And it's not just raw energy: the _bite_ of a slower weapon tends to be larger, so we get more complete energy transfers (real hits) and fewer partial ones (love taps).
+
+## Where this leaves me
+
+There are other things worth digging into. Drag at these speeds will affect the steady-state current and the weapon's spinup time. There's also the energy-transfer side. But generally, this post is just a simple analysis of how much weapon size affects the robot's "punch", if it's the only thing that changes between geometries.
+
+In other words, this is the post that justifies the viability of a horizontal. I get it, it was a gross simplification to treat everything as a bar, and yes, the moment of inertia of a real vertical (drum, eggbeater) is much bigger than an equivalent bar. But it's not a throwaway analysis, since we can see that yes, a horizontal has potential to transfer way more energy than a vertical even spinning slower. Even if the geometry difference for a drum means the vertical's moment of inertia doubles, we'd still be talking about a hit almost 2× as hard. So we can safely assume that a well-designed horizontal has a lot of potential.

@@ -1,0 +1,68 @@
+---
+type: post
+title: "Everything has limits"
+summary: Breaking out of analysis paralysis with the project's constraints, project-wide and system-wide. A ceiling on every axis before CAD starts.
+publishedAt: 2025-12-15
+updatedAt: 2025-12-16
+project: ReBot
+tags: ["combat-robotics", "rebot", "constraints"]
+lang: en
+translationKey: tudo-tem-limites
+---
+
+Talking to a friend, I noticed I was stuck in _analysis paralysis_ on this project and I really want it to leave the page, so I asked for tips on how Micras was originally designed and he brought up something that works as a good starting point: Micras started with **constraints**, the limits of the class and eventually what the project should achieve within them.
+
+With that in mind, we can apply the same principle to our beloved little screw and lay out a series of constraints that bound the universe of possibilities for this problem. So let's get to the limits I've identified so far.
+
+## Constraints
+
+Treat these constraints as ceilings, not goals. By definition they're project-wide rather than system-wide, and they affect the design of the project as a whole. It's from these that we'll derive the system-wide constraints.
+
+To make this easier, I'll define two terms that will guide the project from here on:
+
+- **Project-Wide Constraints (PWCs or PCs):** basic limits that apply to the entire project.
+- **System-Wide Constraints (SWCs or SWs):** limits on a specific system. They can come from a component we picked for another system (a motor that defines the ESC or the battery), or from a component we picked for that system itself.
+  - Even though an SWC belongs to one system, it can be defined by another SWC (or several) on an adjacent system.
+
+### PWCs
+
+It's hard to nail down hard-limits for the class, because in combat, one way or another, the only real limit is weight. So I'm trying to squeeze blood from a stone here, pulling out every limitation I carry around in the back of my head when I think about how to build this. For now, this is what I have:
+
+| Constraint              |                             Value |
+|:----------------------- | ---------------------------------:|
+| Weight                  |                        1360 grams |
+| Battery runtime         |                       2.5 minutes |
+| Total budget*           |                          5000 BRL |
+| Deadline**              |                        2026-09-01 |
+| Component availability  | LCSC / AliExpress / Brazil retail |
+
+- *Total budget includes tools, radio, replacement parts, everything spent on the project.
+- **The September 1st 2026 deadline gives a 30-day margin just for testing and validation **in the worst case**, assuming a debut at Robochallenge. It could just as well be 30 days before whatever the debut competition turns out to be. I'm not bringing a robot that can't survive 2 minutes of getting hit.
+
+### Acceleration and velocity
+
+After I sketched the table above, talking to another _combateiro_, the constraint I hadn't written down came up, and it's probably the most interesting one: the acceleration limit. With no magnet, with friction coefficient less than 1, max acceleration without slipping is just:
+
+$$
+a_{max} = \mu \cdot g
+$$
+
+That value alone says something, but I don't think it's worth dimensioning the motor for the slip-limit torque, because there's real value in keeping torque near that peak at speeds above zero. The actual payoff shows up when a space constraint enters (in our case, the arena). Assuming an over-dimensioned motor that holds that torque the whole way, you can pull out a max velocity past which there's no point designing higher:
+
+$$
+v_{max}^2 = a_{max} \cdot l
+$$
+
+$$
+v_{max} = \sqrt{\mu \cdot g \cdot l}
+$$
+
+Extreme case (μ = 0.95, l = 2.83m, crossing the arena diagonally), $v_{max} \approx$ **5.14 m/s**. More realistic (μ = 0.85, l = 1m, typical distance between robots), $v_{max} \approx$ **2.89 m/s**. The second one is probably the number that goes into dimensioning, because combat is rarely a straight 2.8m sprint.
+
+From this we get something a lot more useful than "we want a fast robot": there's a theoretical ceiling, and any motor far past it is weight and money spent for nothing.
+
+## What now?
+
+The system that lets us define more PWCs is the motors. They'll set a bunch of electrical and mechanical characteristics for everything else, since they're the robot's "endpoints" (the things the system is actually designed to control). And now, with the velocity ceiling from the previous section, we can start fighting with torque-vs-rpm without guessing.
+
+So, time to define what motor we're going to use, and why. Look out for a post in the rebot electrical track.

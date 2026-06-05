@@ -1,0 +1,28 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import UpdateLayout from '../../layouts/UpdateLayout.astro';
+
+export async function getStaticPaths() {
+  const updates = await getCollection('updates', ({ data }) => !data.draft);
+  return updates.map((update) => ({
+    params: { slug: update.id },
+    props: { update },
+  }));
+}
+
+interface Props {
+  update: CollectionEntry<'updates'>;
+}
+
+const { update } = Astro.props;
+const { Content } = await render(update);
+---
+<UpdateLayout
+  project={update.data.project}
+  date={update.data.date}
+  title={update.data.title}
+  mood={update.data.mood}
+  tags={update.data.tags}
+>
+  <Content />
+</UpdateLayout>

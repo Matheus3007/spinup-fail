@@ -1,0 +1,81 @@
+---
+type: post
+title: "Combat: art or engineering? | A manifesto"
+summary: The tenets that will guide ReBot, a beetleweight undercutter built as an engineering project, not as self-expression.
+publishedAt: 2025-12-09
+updatedAt: 2026-01-02
+project: ReBot
+tags: ["combat-robotics", "manifesto", "rebot"]
+lang: en
+translationKey: combate-arte-ou-engenharia
+---
+
+# The idea
+
+This started a while back, I wanted to build another combat bot, this time entirely on my own terms, and I finally have the budget to follow through. I started having ideas and thinking about what I'd want to do. Initially I was sure of three things:
+
+1. I want an undercutter.
+2. It has to be over the top.
+3. It has to be done differently from how I was used to doing at Thunder.
+
+Essentially these were the project's guidelines, and thinking about it, the simple act of running a Thunder-like forum on github already makes me question whether I'm really doing anything different, but it's part of it, I think the documentation was one of the more positive parts of the process anyway.
+
+But then, talking to a friend, a comment came up that bothered me: **"combat robots have always been done more as art and self-expression than as engineering, the way Micras was."**
+
+As a _combateiro_, I disagreed. But on closer inspection, I'm not sure I can keep disagreeing much. The choices were always made on a deep mix of fact, research, experience and opinion, so I want to build this robot to see what happens when you start a project trying to ground and justify each decision as much as possible, without compromising functionality for price, opinion, or because my teammate said it was a good idea to put 2 teeth on a drum and nobody could talk him out of it.
+
+With that in mind, I started thinking about what it means to do combat as an engineering project. The truth is I still don't know, but in this post I'll try to argue a bit about it and lay out a few principles (or tenets) that will guide the development of this charming little beetleweight.
+
+# Tenets
+
+After all that conversation (and after months studying Amazon's LPs for an interview), I started thinking about a few "Tenets" that could guide the development of our charming little beetle. So far, this is what I have:
+
+## 1. Know why
+
+I think the first and most important rule for a _micras-like_ combat bot is that every decision must be justified. The shape of a part, the armor material, the motors and the mosfets picked, everything has to have a purpose, because just saying we're going to use ESC X because that's what everyone uses isn't enough.
+
+If you look at a part, a shape, or a component and can't explain why it's that component, of that material, in that place, it's worth asking whether you're doing this right.
+
+> Example:
+> Q: Why are you using that driver for the weapon?
+> A: Because we sized that to spin a weapon at X rpm we'd need motor A on the weapon, and the driver's peak is compatible with the component, plus the expected steady-state current fits with a comfortable margin.
+
+## 2. Measure twice, cut once
+
+CAD isn't a sketch, it's the documentation of the assembly before it happens.
+
+Designing a combat robot is slow and tedious because, in general, it's done in a rush. There's a lot of urge to throw something into CAD, see what the robot could look like, feel out feasibility kind of by force, but that's just burning time and effort. Here, design only starts after everything (or close to it) has been planned and put on a spreadsheet.
+
+The first version of this tenet said that even before starting the project we'd already know the weight budget for the parts, since battery and motor generally have a fixed weight. But talking to another _combateiro_, that fell apart fast: for an undercutter, which isn't exactly _o meta_ today, weapon motor and battery aren't commodities, weight and size vary with the requirements. Just look at the [spreadsheet](https://docs.google.com/spreadsheets/d/1nx5ALUDzUnAgGOn8EyAheFNy1pvJC-9M_AdBqVdI0Vc/edit?gid=468964854#gid=468964854) for this project to see how spread out the candidates are.
+
+So the more honest tenet is: the spreadsheet comes before the CAD, but the spreadsheet isn't a fixed weight table handed down from above, it's an estimate that iterates alongside the component selection, with margins called out explicitly. The point is to avoid ugly surprises while you're routing screws in the cad, or worse, when the robot doesn't make weight at first assembly.
+
+## 3. Question the status quo
+
+"Because it's too hard" doesn't work here, if it hasn't been tried there's no reason not to try if the marginal upside seems reasonable. The moment this became a hobby and the money started coming out of my own pocket, any test (within a reasonable margin that doesn't keep me from paying rent) is a valid test. This project exists to try as hard as possible to do something off the meta, it's unfair to give up on something before even testing whether it's viable.
+
+The bottom line is that we won't drop something just because it's complex, but the complexity has to bring a real gain (in performance or in learning).
+
+## 4. Rule of Cool
+
+It's the last one but maybe the soul of the thing, even though I really want a competitive robot, what I want above all is _um robô dahora_ (a properly cool robot, the Brazilian phrase carries a weight English doesn't). The whole point is to build a beetle that's _do caralho_ (fucking great), that everyone looks at and goes "porra, do caralho!", that exudes care and announces on its top plate that every screw was thought out and put there on purpose. It's engineering first, but it has to look like a piece of art.
+
+# The project
+
+With the tenets out of the way, a bit about the project itself (it even has a placeholder name, our friend **ReBot**). The plan is a robot that is:
+
+- Beetleweight (because it's a competitive class, but realistic to enter from "zero")
+- Undercutter (because in a meta of verticals and chompers, a horizontal with high enough tip speed has room)
+- Tangentially-driven loc (because I'll need the weight to keep it from being a glass cannon)
+- No hub motor or pulley (more on that in another post)
+- Semi-auto (because simple routines will always be faster and more consistent than a person flooded with adrenaline). And as a friend pointed out, semi-auto requires a basically un-killable robot as a prerequisite, a 3-second auto-routine is worthless on a robot that survives only 5.
+
+The point of this post isn't to dive into the details, but to lay out the general idea of the project. The only thing here that's truly fixed is that it'll be an undercutter (and even that is somewhat flexible). At the end of the day the idea is to build an innovative robot, that puts on a fun show, and that at least makes it to the judges' decision against a benchmark robot.
+
+About the benchmark: the first instinct was to pick Sombra (is that an old-head benchmark?), but in 2025 we had 4 competitions with 3 different winners, and the only one to repeat was **Bandoleiro**. On the surface, it's a more honest benchmark for today. A category-analysis post is probably overdue.
+
+For now I'm in deep research mode, but the spreadsheet already has some candidate motors and batteries, plus drafts of weapon-speed math and so on. Open invitation to comment.
+
+# Conclusion
+
+If anyone read this, I'm glad and hoping for criticism, everything here is subject to change and I'll bring more updates soon.

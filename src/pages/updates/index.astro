@@ -1,0 +1,23 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const updates = (await getCollection('updates', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+---
+<BaseLayout title="Updates · spinup.fail">
+  <h1>Updates</h1>
+  <p class="meta">Build journal: shorter, rougher, more frequent.</p>
+  <ul class="entry-list">
+    {updates.map((u) => (
+      <li>
+        <a href={`/updates/${u.id}`}>
+          <span class="title">{u.data.title ?? `${u.data.project} · ${fmt(u.data.date)}`}</span>
+        </a>
+        <div class="meta">{fmt(u.data.date)} · {u.data.project}{u.data.mood && ` · ${u.data.mood}`}</div>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

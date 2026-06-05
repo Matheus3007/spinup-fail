@@ -1,0 +1,58 @@
+---
+type: post
+title: "About ESCs"
+summary: VESC, BLHELI_S, AM32. The three ESC paradigms in the market, what each one brings (and costs), and why for the rebot's first version the call is to skip the VESC and run BLHELI_S on the loc with AM32 on the weapon.
+publishedAt: 2026-01-18
+updatedAt: 2026-01-18
+project: ReBot
+tags: ["combat-robotics", "rebot", "esc", "electronics"]
+lang: en
+translationKey: sobre-escs
+---
+
+We need to pick an ESC. Actually, we need to pick three. Right now there are a few "paradigms" of ESC in the market, so this post is dedicated to better understanding what each one offers in terms of tradeoffs and some of their general characteristics.
+
+## ESCs
+
+An ESC is a circuit that lets you control a brushless motor with a signal coming from a receiver, a flight controller, or similar. These days we have a few options on the market, each with its pros and cons. Let's go.
+
+### VESC
+
+A VESC is a "Vedder Electronic Speed Controller". The project is reasonably complex to explain briefly here, but essentially these are ESCs that started as an open-source project, mostly for autonomous skateboard control. The main difference is that they use Field-Oriented Control, which decomposes the motor current into two main components:
+
+- **Direct axis current (Id):** controls magnetic flux.
+- **Quadrature axis current (Iq):** controls torque production.
+
+This separation lets the VESC control motor torque much better, makes low-RPM operation easier, and unlocks a bunch of firmware features: knowing and controlling the motor's position without an encoder, broad acceleration- and torque-curve configurability, and generally a more robust, fine-tunable design.
+
+So clearly the best option is to use a VESC, right?
+
+**It depends.**
+
+In larger weight classes, VESCs are the rule. But if we're talking VESC for a beetle, the off-the-shelf ones are big and heavy, infeasible at this scale, not even counting the price (and I'd like to have parts for 2 or 2.5 robots).
+
+There's the alternative of designing a VESC. The standard is open, and it would even be possible to adapt an existing model. That was the original idea. But back then I didn't know about AM32, and I was also assuming time, money, and availability were infinite. Designing a VESC isn't off the table, but it's certainly not going to be the first version of the robot, and it's also certainly not what's going to make the robot win.
+
+### BLHELI_S
+
+Before going deeper, this and the next section are about ESC firmwares, not necessarily hardware. But I'll categorize them as different ESC types because they differ at both the hardware and the firmware level.
+
+BLHELI_S is the war horse. Tried, tested, and true. A simple ESC, 8-bit. The easiest to find; you can get 6S ESCs that weigh 9g (like the LittleBee) and are very cheap. If the ESC is BLHELI_S compatible, we can also use [Bluejay](https://github.com/mathiasvr/bluejay), which is open source, more modern, and lets the ESC run digital protocols and PWM up to 96kHz.
+
+This makes them very interesting for a low-budget build. They're widely used in the class, and I'm leaning toward using them on the loc (at least initially) because they'll handle the current well, have great cost-to-benefit, and let us iterate the project faster.
+
+### AM32 / BLHELI32
+
+This is the natural evolution in firmware terms over the conventional ESCs. Here the micro is 32-bit, so it's a bit more elaborate. AM32 actually came out of the rally-car (rock crawler) world rather than the drone world, so it ends up much better suited for high-torque applications (like our loc, or even ripping a 400g steel bar from rest).
+
+That's because it can do sinusoidal startup, which forces the motor to start with more torque (but less efficiency) at low RPMs. That lets the bar start spinning much faster and transition to conventional control as the torque demand drops, avoiding that initial stutter (cogging) and the high-RPM desync.
+
+For me, it's the ideal balance between simplicity and efficiency. The whole robot on AM32 would mean a snappier loc and a more efficient weapon spinup. The tradeoff is that they're more expensive, so maybe not for the first test version, but it's definitely the medium-term vision for the project.
+
+## The choice
+
+With all of this context, I justify giving up on a VESC for the first iteration and focusing on building the first rebot version with two conventional BLHELI ESCs on the loc and one AM32 on the weapon. From my research, a DYS Aria 70A for the weapon and a pair of LittleBee 35As on the loc will handle it. That gives us a project with consistent, cost-effective, competitive electronics, and above all, feasible for a first robot.
+
+The current we sized for the loc is well below those specs (around 2.5A peak per side, [as I estimated in the previous post](/posts/in-practice-theory-is-something-else)), and the weapon will already be on AM32, so we can configure sinusoidal startup. I also considered the Hobbywing 4-in-1, but on top of being more expensive, it's heavier and we'd be leaving one channel idle.
+
+All of these ESCs also support DShot and PWM, so it's our call whether to start with the robot raw on PWM to iterate the hardware, then drop a microcontroller in the middle later for PID control algorithms and semi-auto routines.

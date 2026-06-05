@@ -1,0 +1,28 @@
+---
+type: post
+title: Beater bars and how much they actually hit
+summary: Why a 5" beater stores ~2.7× more energy than a 3" one at the same RPM, and what that means for a 3lb bot.
+publishedAt: 2026-06-01
+project: Spinup
+tags: ["combat-robotics", "weapons", "energy"]
+---
+
+import BeaterEnergyChart from '../../components/islands/BeaterEnergyChart.tsx';
+import Callout from '../../components/islands/Callout.tsx';
+
+The first version of Spinup's weapon was a 3" steel beater. It looked terrifying.
+It was, statistically, not very terrifying.
+
+Energy of a spinning rod is `E = ½ · I · ω²`, with `I = (1/12) · m · L²` for a uniform
+bar about its center. Length is squared. Doubling the length quadruples the moment of
+inertia at the same mass — and energy scales linearly with `I`.
+
+<BeaterEnergyChart client:visible />
+
+<Callout tone="fail" title="lesson 1">
+  Picking weapon length by what *fits* in the chassis is how you end up with a bot
+  that bumps opponents instead of cutting them.
+</Callout>
+
+Pit-damage threshold for a 3lb bot is roughly 50 J. Drag the chart's mass slider
+and you'll see how quickly that line moves.

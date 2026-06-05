@@ -1,0 +1,151 @@
+---
+type: post
+title: "It's dragging, bro"
+summary: Aerodynamic drag isn't just relevant on an undercutter weapon, it's the limiting factor. Deriving the bar's real RPM, comparing 4S to 6S, and finding where volts-to-rpm stops paying off.
+publishedAt: 2025-12-17
+updatedAt: 2025-12-17
+project: ReBot
+tags: ["combat-robotics", "rebot", "weapons", "aerodynamics"]
+lang: en
+translationKey: ta-arrastando-mano
+---
+
+import WeaponDragRpm from '../../components/islands/WeaponDragRpm.tsx';
+
+On the topic of constraints and limits, I started looking into how to actually find the real velocity ceiling of a weapon given its geometry and the power of the motor we're using, since it's clearly not as simple as saying
+
+$$
+rpm_{arma} = K_v \cdot V
+$$
+
+The point of this post is to show that drag _is_ relevant once you start spinning things very fast, especially when that thing has a large surface area, like the bar of an undercutter. This will matter for avoiding overdimensioning the weapon motor, and it might be essential for setting the battery voltage. Let's go.
+
+## Motor torque curve
+
+Considering that torque is proportional to motor speed, we can define the torque curve of an electric motor as:
+
+$$
+\tau(\omega) = \tau_{stall} \cdot \left(1 - \frac{\omega}{\omega_{vazio}}\right)
+$$
+
+Alright, we have an equation that defines shaft torque given a speed, as a function of two constants. Stall torque and no-load speed are usually datasheet values, but assuming all we have is the KV (rpm/v), we can derive everything from KV alone:
+
+$$
+\omega_{vazio} = V_{bat} \cdot K_v
+$$
+
+$$
+\tau_{stall} = K_t \cdot I_{stall}
+$$
+
+Where $K_t$ comes from:
+
+$$
+K_t = \frac{1}{K_v^{rad/s}} = \frac{1}{K_v \cdot \frac{\pi}{30}} = \frac{9.55}{K_v}
+$$
+
+## Drag on the bar
+
+For the drag side, we have the drag-force equation $F$:
+
+$$
+F = K \cdot \rho \cdot v^2 \cdot h_{barra} \cdot r
+$$
+
+But that's for a rectangle moving in a straight line, and in our case the bar spins. Considering an infinitesimal slice of the bar (yes, we are doing this):
+
+$$
+dF = C_d \cdot \rho \cdot (\omega \cdot r)^2 \cdot h_{barra} \cdot dr
+$$
+
+$$
+d\tau = r \cdot dF = C_d \cdot \rho \cdot \omega^2 \cdot r^3 \cdot h_{barra} \cdot dr
+$$
+
+For the whole bar, integrate:
+
+$$
+\tau_{drag} = \int_{0}^{R} \frac{1}{2} \rho \cdot C_d \cdot h \cdot \omega^2 \cdot r^3 \, dr
+$$
+
+$$
+\tau_{drag} = \frac{1}{8} \rho \cdot C_d \cdot h \cdot \omega^2 \cdot R^4
+$$
+
+That's for one "blade". For an asymmetric weapon with $r_{dente}$ for the tooth radius and $r_{cp}$ for the counterweight radius, drag as a function of speed becomes:
+
+$$
+\tau_{drag}(\omega) = \frac{1}{8} K \rho h (r_{dente}^4 + r_{cp}^4) \cdot \omega^2
+$$
+
+To shorten that mess, let's call it the system constant $K_s$:
+
+$$
+\tau_{drag}(\omega) = K_s \cdot \omega^2
+$$
+
+## Terminal velocity
+
+Given motor torque on one side and drag torque on the other, we can find the bar's terminal velocity by setting them equal (note this is still higher than the real ceiling, since we're not accounting for friction losses):
+
+$$
+\tau_{drag} = \tau_{motor}
+$$
+
+$$
+\tau_{stall} - \frac{\tau_{stall}}{\omega_{vazio}} \cdot \omega_{real} = K_s \cdot \omega_{real}^2
+$$
+
+Finally, we can write the equation for $\omega_{real}$:
+
+$$
+\omega_{real} = \frac{-\left(\frac{\tau_{stall}}{\omega_{vazio}}\right) + \sqrt{\left(\frac{\tau_{stall}}{\omega_{vazio}}\right)^2 + 4 \cdot K_s \cdot \tau_{stall}}}{2 \cdot K_s}
+$$
+
+Where:
+
+$$
+K_s = \frac{1}{8} \rho C_d h \left(r_{dente}^4 + r_{cp}^4\right)
+$$
+
+## Plugging in values
+
+Right, let's lock everything down as constants and look at the function $N_{real}(N_{vazio})$, where $N$ is RPM. To avoid inventing numbers, I'll use a project candidate, the [iFlight XING 2814 880KV](https://pt.aliexpress.com/item/1005009954781645.html). I picked this motor because it's close to what the TPU folks use (theirs has higher KV, but they're thinking of dropping it because they didn't miss the extra speed):
+
+- Rectangular bar, $C_d \approx 1.2$
+- $r_{dente} = 0.14$ m
+- $r_{cp} = 0.04$ m
+- $h = 0.015$ m
+- $\tau_{stall} = K_t \cdot I_{stall} = K_t \cdot \frac{V_{batt}}{R_{int}}$
+  - $\tau_{4S} = 3.57$ N·m
+  - $\tau_{6S} = 5.35$ N·m
+- $\omega_{vazio,4S} = 1438$ rad/s
+- $\omega_{vazio,6S} = 2156.4$ rad/s
+- $\rho = 1.225$ kg/m³
+
+Talking to another _combateiro_ after I posted this, he pointed out that my original $K_s$ was off by about 2× what the formula actually gives. Redoing it:
+
+$$
+K_s = \frac{1}{8} \cdot 1.225 \cdot 1.2 \cdot 0.015 \cdot (0.14^4 + 0.04^4) \approx 1.066 \cdot 10^{-6}
+$$
+
+So that's the $K_s$ we're going with, and that's what the chart below is plotting. The qualitative conclusion doesn't change (drag still runs the show), but the absolute numbers do.
+
+<WeaponDragRpm client:visible />
+
+The main point here is:
+
+1. **Bar speed falls exponentially relative to no-load speed.** The relationship is far from linear, and an efficient design has to avoid the diminishing-returns zone.
+2. **The 6S advantage is real, and it's huge.** First, you can hit roughly 4S full-throttle behavior on a much smaller fraction of 6S throttle. Drag the throttle slider on the chart to see where the curves meet: there's a wide margin to operate below the ceiling. Second, this gives me an absurdly faster spinup. To become dangerous I no longer need _spinup to 100_, _spinup to 50_ already gets me there, and beyond that is something the same robot on 4S could never do. Third, the gap only widens as the weapon becomes less aerodynamic, meaning: ideally, the bigger and less aerodynamic the bar, the more there is to gain from 6S.
+
+## What I'm getting at
+
+My point ever since I started researching and writing this post was to call out that something we ignored at Thunder for as long as I can remember, and in undergrad forever, this notorious drag, actually matters a LOT in combat, especially the smaller robots that spin their bars fast. It's actually _the_ limiting factor on the weapon, our _upper bound_, which is why we should be designing the entire geometry around it and the implications it has on the electrical side.
+
+I'm not saying build the weapon before the electronics, far from it, but with this in mind we already know what the motor will actually be able to deliver to a robot with the kind of weapon we want.
+
+## Coda: gear reduction
+
+After I posted this, the same friend who caught the $K_s$ slip pointed out something else I'd left out: the equation above assumes the motor is direct-drive on the weapon shaft. If you put a reduction ratio $n$ in there, the bar's terminal velocity becomes a function of $n$, and there's an optimum, meaning there's a reduction that maximizes the bar's real velocity given drag. In his run, with the values above, that optimum landed near $n = 0.77$. Translation: for this geometry, _stepping up_ the weapon speed with a gear ratio is theoretically worth it.
+
+I'll dig into that in a separate post, it's hairy enough to deserve its own.

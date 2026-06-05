@@ -1,0 +1,33 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  summary: string;
+  publishedAt: Date;
+  updatedAt?: Date;
+  project?: string;
+  tags: string[];
+}
+
+const { title, summary, publishedAt, updatedAt, project, tags } = Astro.props;
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+---
+<BaseLayout title={`${title} · spinup.fail`} description={summary}>
+  <article>
+    <header>
+      <h1>{title}</h1>
+      <p class="meta">
+        <time datetime={publishedAt.toISOString()}>{fmt(publishedAt)}</time>
+        {updatedAt && <span> · updated {fmt(updatedAt)}</span>}
+        {project && <span> · {project}</span>}
+      </p>
+      <p>{summary}</p>
+      {tags.length > 0 && (
+        <p>{tags.map((t) => <span class="tag">{t}</span>)}</p>
+      )}
+      <hr />
+    </header>
+    <slot />
+  </article>
+</BaseLayout>
