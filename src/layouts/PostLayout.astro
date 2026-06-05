@@ -8,10 +8,13 @@ interface Props {
   updatedAt?: Date;
   project?: string;
   tags: string[];
+  lang?: 'en' | 'pt';
+  altLangHref?: string;
 }
 
-const { title, summary, publishedAt, updatedAt, project, tags } = Astro.props;
+const { title, summary, publishedAt, updatedAt, project, tags, lang = 'en', altLangHref } = Astro.props;
 const fmt = (d: Date) => d.toISOString().slice(0, 10);
+const altLabel = lang === 'en' ? 'ler em português' : 'read in english';
 ---
 <BaseLayout title={`${title} · spinup.fail`} description={summary}>
   <article>
@@ -21,6 +24,15 @@ const fmt = (d: Date) => d.toISOString().slice(0, 10);
         <time datetime={publishedAt.toISOString()}>{fmt(publishedAt)}</time>
         {updatedAt && <span> · updated {fmt(updatedAt)}</span>}
         {project && <span> · {project}</span>}
+        <span class="lang-pill">{lang}</span>
+        {altLangHref && (
+          <a
+            class="lang-toggle"
+            href={altLangHref}
+            data-alt-en={lang === 'pt' ? altLangHref : undefined}
+            data-alt-pt={lang === 'en' ? altLangHref : undefined}
+          >{altLabel}</a>
+        )}
       </p>
       <p>{summary}</p>
       {tags.length > 0 && (

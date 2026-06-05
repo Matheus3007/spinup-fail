@@ -2,9 +2,11 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime())
-  .slice(0, 5);
+const allPosts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
+
+const enPosts = allPosts.filter((p) => p.data.lang !== 'pt').slice(0, 5);
+const ptPosts = allPosts.filter((p) => p.data.lang === 'pt').slice(0, 5);
 
 const updates = (await getCollection('updates', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
@@ -12,32 +14,64 @@ const updates = (await getCollection('updates', ({ data }) => !data.draft))
 
 const fmt = (d: Date) => d.toISOString().slice(0, 10);
 ---
-<BaseLayout title="spinup.fail" description="Maker projects, robots, and the things that broke along the way.">
-  <h1>spinup.fail</h1>
-  <p>Maker projects, robots, and the things that broke along the way.</p>
+<BaseLayout title="spinup.fail" description="Maker projects, robots, and the things that broke along the way." isHome>
+  <div class="home-hero">
+    <h1 class="home-title">spinup.fail</h1>
+    <p class="home-tagline lang-en">Maker projects, robots, and the things that broke along the way.</p>
+    <p class="home-tagline lang-pt">Projetos de maker, robôs, e as coisas que quebraram no caminho.</p>
+  </div>
 
-  <h2>Latest posts</h2>
-  <ul class="entry-list">
-    {posts.map((p) => (
-      <li>
-        <a href={`/posts/${p.id}`}><span class="title">{p.data.title}</span></a>
-        <div class="meta">{fmt(p.data.publishedAt)}{p.data.project && ` · ${p.data.project}`}</div>
-        <div class="summary">{p.data.summary}</div>
-      </li>
-    ))}
-    {posts.length === 0 && <li class="meta">nothing yet</li>}
-  </ul>
+  <div class="lang-en">
+    <h2>Latest posts</h2>
+    <ul class="entry-list">
+      {enPosts.map((p) => (
+        <li>
+          <a href={`/posts/${p.id}`}><span class="title">{p.data.title}</span></a>
+          <div class="meta">{fmt(p.data.publishedAt)}{p.data.project && ` · ${p.data.project}`}</div>
+          <div class="summary">{p.data.summary}</div>
+        </li>
+      ))}
+      {enPosts.length === 0 && <li class="meta">nothing yet</li>}
+    </ul>
 
-  <h2>Recent updates</h2>
-  <ul class="entry-list">
-    {updates.map((u) => (
-      <li>
-        <a href={`/updates/${u.id}`}>
-          <span class="title">{u.data.title ?? `${u.data.project} · ${fmt(u.data.date)}`}</span>
-        </a>
-        <div class="meta">{fmt(u.data.date)} · {u.data.project}{u.data.mood && ` · ${u.data.mood}`}</div>
-      </li>
-    ))}
-    {updates.length === 0 && <li class="meta">nothing yet</li>}
-  </ul>
+    <h2>Recent updates</h2>
+    <ul class="entry-list">
+      {updates.map((u) => (
+        <li>
+          <a href={`/updates/${u.id}`}>
+            <span class="title">{u.data.title ?? `${u.data.project} · ${fmt(u.data.date)}`}</span>
+          </a>
+          <div class="meta">{fmt(u.data.date)} · {u.data.project}{u.data.mood && ` · ${u.data.mood}`}</div>
+        </li>
+      ))}
+      {updates.length === 0 && <li class="meta">nothing yet</li>}
+    </ul>
+  </div>
+
+  <div class="lang-pt">
+    <h2>Posts recentes</h2>
+    <ul class="entry-list">
+      {ptPosts.map((p) => (
+        <li>
+          <a href={`/pt/posts/${p.data.translationKey ?? p.id}`}><span class="title">{p.data.title}</span></a>
+          <div class="meta">{fmt(p.data.publishedAt)}{p.data.project && ` · ${p.data.project}`}</div>
+          <div class="summary">{p.data.summary}</div>
+        </li>
+      ))}
+      {ptPosts.length === 0 && <li class="meta">nada por aqui ainda</li>}
+    </ul>
+
+    <h2>Atualizações recentes</h2>
+    <ul class="entry-list">
+      {updates.map((u) => (
+        <li>
+          <a href={`/updates/${u.id}`}>
+            <span class="title">{u.data.title ?? `${u.data.project} · ${fmt(u.data.date)}`}</span>
+          </a>
+          <div class="meta">{fmt(u.data.date)} · {u.data.project}{u.data.mood && ` · ${u.data.mood}`}</div>
+        </li>
+      ))}
+      {updates.length === 0 && <li class="meta">nada por aqui ainda</li>}
+    </ul>
+  </div>
 </BaseLayout>

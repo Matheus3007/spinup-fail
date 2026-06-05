@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
+const posts = (await getCollection('posts', ({ data }) => !data.draft && data.lang !== 'pt'))
   .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
 
 const fmt = (d: Date) => d.toISOString().slice(0, 10);

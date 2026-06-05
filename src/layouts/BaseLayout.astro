@@ -1,12 +1,16 @@
 ---
 import '../styles/global.css';
+import 'katex/dist/katex.min.css';
 
 interface Props {
   title: string;
   description?: string;
+  /** Set to true on the home route so the small site brand collapses
+      and the big page heading takes over. */
+  isHome?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, isHome = false } = Astro.props;
 ---
 <html lang="en">
   <head>
@@ -16,14 +20,39 @@ const { title, description } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     {description && <meta name="description" content={description} />}
     <title>{title}</title>
+    <script is:inline>
+      // Resolve the language preference before paint to avoid a flash. The
+      // preference is stored in localStorage; if absent, fall back to the
+      // browser's language. PT is opt-in to anything that starts with "pt".
+      (function () {
+        try {
+          var stored = localStorage.getItem('lang-pref');
+          var pref = stored;
+          if (!pref) {
+            var nav = (navigator.language || '').toLowerCase();
+            pref = nav.indexOf('pt') === 0 ? 'pt' : 'en';
+          }
+          document.documentElement.dataset.lang = pref;
+          document.documentElement.lang = pref;
+        } catch (_) {
+          document.documentElement.dataset.lang = 'en';
+        }
+      })();
+    </script>
   </head>
-  <body>
+  <body class={isHome ? 'is-home' : ''}>
     <header class="site">
       <a class="brand" href="/">spinup.fail</a>
       <nav>
-        <a href="/posts">posts</a>
+        <a href="/posts" class="nav-en">posts</a>
+        <a href="/pt/posts" class="nav-pt">posts</a>
         <a href="/updates">updates</a>
         <a href="/about">about</a>
+        <button type="button" class="lang-switch" aria-label="toggle language" data-lang-switch>
+          <span class="lang-switch__opt lang-switch__opt--en">EN</span>
+          <span class="lang-switch__sep">/</span>
+          <span class="lang-switch__opt lang-switch__opt--pt">PT</span>
+        </button>
       </nav>
     </header>
     <main>
@@ -31,7 +60,37 @@ const { title, description } = Astro.props;
     </main>
     <footer class="site">
       <span>built with Astro · </span>
-      <a href="https://github.com/rezemath/spinup-fail">source</a>
+      <a href="https://github.com/Matheus3007/spinup-fail">source</a>
     </footer>
+    <script is:inline>
+      // Wire the language toggle. On click: flip the stored preference, set
+      // the data-lang attribute (so CSS reflows EN/PT-only blocks), and if
+      // we're on a page that has a sibling translation, navigate there.
+      (function () {
+        var btn = document.querySelector('[data-lang-switch]');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+          var current = document.documentElement.dataset.lang === 'pt' ? 'pt' : 'en';
+          var next = current === 'pt' ? 'en' : 'pt';
+          try { localStorage.setItem('lang-pref', next); } catch (_) {}
+          document.documentElement.dataset.lang = next;
+          document.documentElement.lang = next;
+          // If the current post has an alt-language sibling link, follow it.
+          var altSelector = next === 'pt' ? '[data-alt-pt]' : '[data-alt-en]';
+          var alt = document.querySelector(altSelector);
+          if (alt && alt.getAttribute('href')) {
+            window.location.href = alt.getAttribute('href');
+            return;
+          }
+          // On the posts/updates index, swap path between /pt/posts and /posts.
+          var path = window.location.pathname;
+          if (next === 'pt' && path === '/posts') { window.location.href = '/pt/posts'; return; }
+          if (next === 'pt' && path === '/posts/') { window.location.href = '/pt/posts'; return; }
+          if (next === 'en' && (path === '/pt/posts' || path === '/pt/posts/')) {
+            window.location.href = '/posts'; return;
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -1,11 +1,19 @@
 :root {
-  --bg: #0c0d10;
-  --fg: #e6e6e6;
-  --muted: #8b8d92;
-  --accent: #ff5b3a;
-  --rule: #2a2c33;
-  --code-bg: #15171c;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* "Foundry at first light" — fired clay terracotta, charcoal kiln walls,
+     dark taupe ash, mineral neutrals. Earthy and warm-mineral, not
+     industrial-cold. Grays carry a brown undertone so terracotta reads as
+     native to the same fired-earth world. */
+  --bg: #37322E;          /* charcoal kiln wall */
+  --bg-panel: #524944;    /* dark taupe page */
+  --fg: #e8e6e3;          /* warm near-white, kiln chalk (brighter than the original light gray for body-text contrast) */
+  --muted: #B3B2B0;       /* the original light gray — reserved for secondary text where mid-gray would muddy */
+  --accent: #B34B0C;      /* fired-clay terracotta — the highlight */
+  --accent-2: #7C3306;    /* deep brick — warm complement */
+  --rule: #6C6A68;        /* mid-gray — works as a panel seam against the dark taupe panel */
+  --rule-strong: #8a8784; /* slightly brighter step for harder edges */
+  --code-bg: #2a2520;     /* deeper recess, warm shadow within the panel */
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 * { box-sizing: border-box; }
@@ -18,17 +26,21 @@ html, body {
   line-height: 1.55;
 }
 
+body, input, button, select, textarea {
+  font-family: var(--font-mono);
+}
+
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 main {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1.25rem 6rem;
+  padding: 1.75rem 1.5rem 4rem;
 }
 
 header.site {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 0;
   display: flex;
@@ -56,7 +68,7 @@ h2 { font-size: 1.4rem; margin-top: 2.4rem; }
 
 hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 
-pre, code { font-family: inherit; }
+pre, code { font-family: var(--font-mono); }
 pre {
   background: var(--code-bg);
   padding: 1rem;
@@ -82,10 +94,374 @@ ul.entry-list .summary { color: var(--muted); font-size: 0.9rem; margin-top: 0.1
   margin-right: 0.3rem;
 }
 
+/* Tables — spec-sheet style. Full-width, label-left, value-right.
+   The rule line is what carries your eye across the row; both columns
+   anchor to a real edge so the gap reads as deliberate, not wasted.
+   Header is a small uppercase label in the same family as .meta and
+   .island-panel__title so tables read as native to the blog. */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.88rem;
+}
+
+thead th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+tbody td {
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+/* Honor markdown alignment hints from both `align` attrs and inline styles. */
+th[align="center"], td[align="center"] { text-align: center; }
+th[align="right"], td[align="right"] { text-align: right; }
+
+.lang-pill {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  padding: 0 0.35rem;
+}
+.lang-toggle {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Language-conditional blocks. The data-lang attribute is set on <html>
+   before paint by the inline script in BaseLayout, so there's no flash. */
+html[data-lang="en"] .lang-pt,
+html[data-lang="en"] .nav-pt { display: none !important; }
+html[data-lang="pt"] .lang-en,
+html[data-lang="pt"] .nav-en { display: none !important; }
+
+/* Site-header lang toggle */
+.lang-switch {
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  padding: 0.05rem 0.4rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.lang-switch:hover { border-color: var(--accent); color: var(--fg); }
+.lang-switch__opt { transition: color 120ms ease-out; }
+.lang-switch__sep { opacity: 0.5; }
+html[data-lang="en"] .lang-switch__opt--en { color: var(--fg); }
+html[data-lang="pt"] .lang-switch__opt--pt { color: var(--fg); }
+
+/* Homepage hero — big title, no duplicate brand. The hero pulls itself up
+   into the same vertical band as the site nav so the cap-height of
+   "spinup.fail" lines up with the top of the "posts / updates / about"
+   row on the right. The negative margin compensates for <main>'s top
+   padding plus the H1's font ascender. */
+body.is-home header.site .brand { visibility: hidden; }
+body.is-home main { padding-top: 0; }
+.home-hero {
+  margin: 0 0 3rem;
+  /* Pull the title up so its cap-height sits at the header padding line.
+     header.site has padding-top: 1.5rem; the nav text sits at that line.
+     We negate enough to bring the H1's visual top up to the same y. */
+  margin-top: -0.6rem;
+}
+.home-title {
+  font-size: 3rem;
+  line-height: 1;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.03em;
+}
+.home-tagline {
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
 footer.site {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+/* ============================================================
+   Island design system
+   ============================================================ */
+
+.island-panel {
+  margin: 1.75rem 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  font-size: 0.85rem;
+}
+
+.island-panel__title {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.island-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.island-control {
+  border-left: 3px solid var(--rule-strong);
+  padding-left: 0.6rem;
+}
+
+.island-control__legend {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--fg);
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.island-control__swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* Single-row form field (label + control + value readout) */
+.island-field {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+  color: var(--muted);
+}
+
+.island-field__label {
+  font-size: 0.8rem;
+}
+
+.island-field__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  font-size: 0.8rem;
+  min-width: 3.5ch;
+  text-align: right;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.15rem;
+}
+
+.island-field__unit {
+  color: var(--muted);
+  margin-left: 0.15rem;
+}
+
+/* Range input (slider) — same look across browsers, themed to the site */
+input[type="range"].island-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  margin: 0;
+  cursor: pointer;
+}
+input[type="range"].island-slider:focus { outline: none; }
+
+input[type="range"].island-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  background: var(--rule-strong);
+  border-radius: 2px;
+}
+input[type="range"].island-slider::-moz-range-track {
+  height: 3px;
+  background: var(--rule-strong);
+  border-radius: 2px;
+}
+
+input[type="range"].island-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  margin-top: -4.5px;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+input[type="range"].island-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+input[type="range"].island-slider:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"].island-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(179, 75, 12, 0.35);
+}
+
+/* Number input — used as the typeable readout next to a slider, and as a
+   standalone input. Reads as plain text by default; the focus state hints
+   that it's typeable. No spinner buttons (Firefox + WebKit) — the slider
+   is the +/- affordance, the input is for precision. */
+input[type="number"].island-number,
+input[type="text"].island-number {
+  width: 6ch;
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-bottom: 1px dashed transparent;
+  padding: 0.05rem 0.1rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+input[type="number"].island-number:hover {
+  border-bottom-color: var(--rule-strong);
+}
+input[type="number"].island-number:focus,
+input[type="text"].island-number:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+  border-bottom-style: solid;
+}
+/* Hide spinner buttons. */
+input[type="number"].island-number::-webkit-outer-spin-button,
+input[type="number"].island-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+input[type="number"].island-number {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Recharts — force its SVG text to use the site font and our muted color.
+   Without this, charts fall back to Arial and look out of place. */
+.island-chart .recharts-wrapper,
+.island-chart .recharts-surface text,
+.island-chart .recharts-tooltip-wrapper,
+.island-chart .recharts-default-tooltip,
+.island-chart .recharts-default-legend {
+  font-family: var(--font-mono) !important;
+}
+.island-chart .recharts-cartesian-axis-tick-value,
+.island-chart .recharts-label,
+.island-chart .recharts-text {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.island-chart .recharts-cartesian-grid line { stroke: var(--rule); }
+.island-chart .recharts-cartesian-axis line,
+.island-chart .recharts-cartesian-axis-tick-line {
+  stroke: var(--rule-strong);
+}
+.island-chart .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--code-bg) !important;
+  border: 1px solid var(--rule) !important;
+  border-radius: 4px !important;
+  font-size: 0.78rem !important;
+}
+.island-chart .recharts-tooltip-item { color: var(--fg) !important; }
+.island-chart .recharts-tooltip-label { color: var(--muted) !important; }
+
+/* While dragging-to-zoom, hide the default crosshair so the selection band reads cleanly */
+.island-chart .recharts-tooltip-cursor { stroke: var(--rule-strong); stroke-dasharray: 2 3; }
+
+/* Readout — the post-chart "answer" block */
+.island-readout {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.island-readout__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  gap: 1rem;
+}
+.island-readout__label {
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+}
+.island-readout__swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 0.4rem;
+}
+.island-readout__value {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* Buttons — used for "reset zoom" etc */
+.island-button {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  padding: 0.3rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.1s ease, color 0.1s ease;
+}
+.island-button:hover { border-color: var(--accent); color: var(--accent); }
+.island-button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.island-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+/* Fade the chart cursor a bit during drag-to-zoom */
+.island-panel.is-zooming .recharts-tooltip-wrapper { display: none !important; }

@@ -119,15 +119,23 @@ For each request:
    - Choose a PascalCase name from the description (e.g. "compare beater
      energies" → `BeaterEnergyComparison`). If the name collides with an
      existing component, suffix with `2`, `3`, etc.
-   - Write `<islandsDir>/<Name>.tsx`. Defaults:
-     - Use Recharts for charts (already installed).
-     - Use plain controlled `<input>` elements for parameters; style them to
-       match `Callout.tsx`'s palette (`#15171c` bg, `#2a2c33` border,
-       `#e6e6e6` fg, accent `#ff5b3a`).
-     - Container: `padding: 1rem; border: 1px solid #2a2c33; border-radius: 8;
-       background: #0f1014; margin: 1.5rem 0`.
+   - **First read `<islandsDir>/REGISTRY.md`'s "Design rules for islands"
+     section** and follow it strictly. The short version:
+     - Build on `_primitives.tsx`: `IslandPanel`, `Controls`, `ControlGroup`,
+       `Slider`, `NumberInput`. Do not author panel CSS.
+     - **Always prefer `<Slider>`** over text/number inputs. Use
+       `<NumberInput>` only when bounds can't be reasonably chosen.
+     - Use Recharts for charts. Wrap the `<ResponsiveContainer>` in
+       `<div className="island-chart">`. Do NOT add a `<Legend>` (the
+       colored `<ControlGroup>` legends are the legend).
+     - Animate chart series: `isAnimationActive`, `animationDuration={180}`,
+       `animationEasing="ease-out"`. Smoothness is a hard rule — lines must
+       flow when sliders change, not jump.
+     - Pull all colors from CSS variables; pick series colors from the
+       palette listed in REGISTRY.md.
+     - **No inline `font-family`** — text inherits from the site.
      - Default-export the component.
-     - No props unless the description names them. Component should be
+     - No props unless the description names them. Component is
        self-contained.
    - Append a `## <Name>` entry to `REGISTRY.md` with file, "When to use"
      (paraphrased from the request), props, and example.

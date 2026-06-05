@@ -13,6 +13,8 @@ const posts = defineCollection({
     tags: z.array(z.string()).default([]),
     hero: z.string().optional(),
     draft: z.boolean().default(false),
+    lang: z.enum(['en', 'pt']).default('en'),
+    translationKey: z.string().optional(),
   }),
 });
 

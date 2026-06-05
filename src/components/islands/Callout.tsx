@@ -3,10 +3,12 @@ import type { ReactNode } from 'react';
 type Tone = 'note' | 'warn' | 'fail' | 'win';
 
 const colors: Record<Tone, { bg: string; border: string; label: string }> = {
-  note: { bg: '#15171c', border: '#2a4a8a', label: 'NOTE' },
-  warn: { bg: '#1c1812', border: '#b48a3a', label: 'WARN' },
-  fail: { bg: '#1c1213', border: '#a83a3a', label: 'FAIL' },
-  win:  { bg: '#121c14', border: '#3aa86a', label: 'WIN'  },
+  // Backgrounds sit just below --bg-panel in the same warm-taupe family.
+  // Borders pull from the foundry palette so callouts feel native.
+  note: { bg: '#3f3a35', border: '#a09c97', label: 'NOTE' }, // ash-on-stone
+  warn: { bg: '#3d352a', border: '#c9893a', label: 'WARN' }, // ember amber
+  fail: { bg: '#3d2820', border: '#B34B0C', label: 'FAIL' }, // terracotta — fail is the brand color
+  win:  { bg: '#33372d', border: '#8a9670', label: 'WIN'  }, // sage-clay
 };
 
 export function Callout({ tone = 'note', title, children }: { tone?: Tone; title?: string; children: ReactNode }) {

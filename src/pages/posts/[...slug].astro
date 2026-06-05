@@ -3,19 +3,27 @@ import { getCollection, render, type CollectionEntry } from 'astro:content';
 import PostLayout from '../../layouts/PostLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft);
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  const all = await getCollection('posts', ({ data }) => !data.draft);
+  const en = all.filter((p) => p.data.lang !== 'pt');
+  return en.map((post) => {
+    const sibling = post.data.translationKey
+      ? all.find((p) => p.data.lang === 'pt' && p.data.translationKey === post.data.translationKey)
+      : undefined;
+    return {
+      params: { slug: post.id },
+      props: { post, hasPt: Boolean(sibling) },
+    };
+  });
 }
 
 interface Props {
   post: CollectionEntry<'posts'>;
+  hasPt: boolean;
 }
 
-const { post } = Astro.props;
+const { post, hasPt } = Astro.props;
 const { Content } = await render(post);
+const ptHref = hasPt && post.data.translationKey ? `/pt/posts/${post.data.translationKey}` : undefined;
 ---
 <PostLayout
   title={post.data.title}
@@ -24,6 +32,8 @@ const { Content } = await render(post);
   updatedAt={post.data.updatedAt}
   project={post.data.project}
   tags={post.data.tags}
+  lang="en"
+  altLangHref={ptHref}
 >
   <Content />
 </PostLayout>
