@@ -1,7 +1,11 @@
 # Island registry
 
-This file is the contract between the `obsidian-import` skill and the React
-components in this folder.
+This file is the contract between the `post` skill (and the older
+`obsidian-import` skill) and the React components in this folder.
+
+**Reach for the generic islands first** (`DataChart`, `FormulaCalc`): they
+take data/formulas as props and already follow every rule below, so most
+posts need no new React code.
 
 ## Design rules for islands (read before generating new ones)
 
@@ -32,6 +36,8 @@ components in this folder.
   3. `#a08474` — adobe taupe (third tone for 3-series charts)
   4. `#9c7c4a` — kiln gold (warm earth-yellow)
   5. `#7d6b5e` — burnt umber
+  The same list is exported as `SERIES` from `_primitives.tsx` (used by the
+  generic islands); keep the two in sync on a palette swap.
   Avoid using `--accent` `#B34B0C` or `--accent-2` `#7C3306` themselves as a
   series color: panel border and cursors already carry them.
 
@@ -74,6 +80,8 @@ another at 20k), add **drag-to-zoom**:
 
 ### Self-contained
 No props unless the request explicitly names them — with one exception: `lang`.
+(The generic islands are the deliberate exception: they are configured
+entirely through props.)
 
 ### Bilingual labels
 Every island MUST accept an optional `lang?: 'en' | 'pt'` prop (default `'en'`)
@@ -84,6 +92,52 @@ PT version of an island. Variable names (r_dente, r_cp, K_s) stay verbatim
 across languages — they're identifiers, not prose.
 
 ## Existing components
+
+### DataChart (generic)
+- **File:** `DataChart.tsx`
+- **When to use:** Any chart of known data points: measurements, a table from
+  the notes, a spec-sheet curve, benchmark bars. Line charts with numeric x
+  get an operating-point slider (cursor + per-series readout + ratio row when
+  there are exactly two series) and drag-to-zoom with "reset zoom" for free.
+- **Props:** `{ lang?, title?, kind?: 'line' | 'bar', x: string, xLabel?, yLabel?, xUnit?,
+  series: { key, label, unit? }[], data: Record<string, number | string>[],
+  cursor?: string | false, cursorAt?: number, zoom?: boolean, ratioLabel?, height? }`.
+  Prose comes in via props; the PT twin passes translated strings + `lang="pt"`
+  (which switches the built-in words: "operating point", "reset zoom", hint).
+- **Example:**
+  ```mdx
+  <DataChart client:visible title="thrust vs throttle" x="t" xLabel="throttle" xUnit="%"
+    yLabel="thrust (g)" ratioLabel="6S / 4S"
+    series={[{ key: 's4', label: '4S', unit: 'g' }, { key: 's6', label: '6S', unit: 'g' }]}
+    data={[{ t: 0, s4: 0, s6: 0 }, { t: 50, s4: 410, s6: 690 }, { t: 100, s4: 980, s6: 1620 }]} />
+  ```
+
+### FormulaCalc (generic)
+- **File:** `FormulaCalc.tsx`
+- **When to use:** The post has a formula the reader should play with
+  (energy, current draw, flight time, tip speed…). Sliders in, computed
+  readouts out; optionally a chart sweeping one input, whose slider becomes the
+  operating-point cursor (ratio row when exactly two outputs are charted).
+- **Props:** `{ lang?, title?, inputs: { id, label, min, max, step?, value, unit?, group? }[],
+  outputs: { id, label, expr, unit?, digits?, hidden? }[],
+  chart?: { x: inputId, y: outputId[], xLabel?, yLabel?, points?, ratioLabel? }, height? }`.
+  `expr` is a JS expression over input ids, earlier output ids, `Math` names
+  (`sqrt`, `PI`, `sin`…) and `^` for powers. Slider bounds: ~25% beyond
+  plausible values, in units the reader thinks in (mm, rpm, g).
+- **Example:**
+  ```mdx
+  <FormulaCalc client:visible title="bar energy"
+    inputs={[
+      { id: 'm', label: 'bar mass', min: 50, max: 600, step: 5, value: 250, unit: 'g' },
+      { id: 'L', label: 'bar length', min: 80, max: 400, step: 5, value: 250, unit: 'mm' },
+      { id: 'rpm', label: 'speed', min: 0, max: 15000, step: 100, value: 8000, unit: 'rpm', group: 'operating point' },
+    ]}
+    outputs={[
+      { id: 'I', label: 'inertia', expr: '(m/1000) * (L/1000)^2 / 12', unit: 'kg·m²', hidden: true },
+      { id: 'E', label: 'stored energy', expr: '0.5 * I * (rpm * 2*PI/60)^2', unit: 'J' },
+    ]}
+    chart={{ x: 'rpm', y: ['E'], yLabel: 'energy (J)' }} />
+  ```
 
 ### HorizontalVsVerticalEnergy
 - **File:** `HorizontalVsVerticalEnergy.tsx`
@@ -105,6 +159,7 @@ across languages — they're identifiers, not prose.
 
 ### _primitives (not an island — shared building blocks)
 - **File:** `_primitives.tsx`
-- **Exports:** `IslandPanel`, `Controls`, `ControlGroup`, `Slider`, `NumberInput`.
+- **Exports:** `IslandPanel`, `Controls`, `ControlGroup`, `Slider`, `NumberInput`,
+  `Button`, `Readout`, `ReadoutRow`, `Hint`, `SERIES` (palette), `fmtNum`.
 - **Use:** Internal — never imported into MDX directly. New island components
   must build on top of these.

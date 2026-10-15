@@ -188,3 +188,15 @@ export function ReadoutRow({ label, value, swatch }: ReadoutRowProps) {
 export function Hint({ children }: { children: ReactNode }) {
   return <div className="island-hint">{children}</div>;
 }
+
+/** Chart series palette, in order (mirrors REGISTRY.md). Used by the generic
+ *  data-driven islands; hand-written islands may hardcode from the same list. */
+export const SERIES = ['#c9893a', '#8a9670', '#a08474', '#9c7c4a', '#7d6b5e'] as const;
+
+/** Compact number formatting for readouts and ticks. */
+export function fmtNum(v: number, digits = 3): string {
+  if (!Number.isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a !== 0 && (a >= 1e6 || a < 1e-3)) return v.toExponential(2);
+  return Number(v.toPrecision(Math.max(1, digits))).toLocaleString('en-US', { maximumFractionDigits: 6 });
+}
