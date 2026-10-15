@@ -23,26 +23,32 @@ React components live under `src/components/islands/`. Use them in MDX with an
 explicit hydration directive:
 
 ```mdx
-import BeaterEnergyChart from '../../components/islands/BeaterEnergyChart.tsx';
+import WeaponDragRpm from '../../components/islands/WeaponDragRpm.tsx';
 
-<BeaterEnergyChart client:visible />
+<WeaponDragRpm client:visible />
 ```
 
-`REGISTRY.md` in that folder is the contract used by the `obsidian-import`
-skill — it maps "when to use" descriptions to existing components so they get
-reused instead of regenerated.
+`DataChart` and `FormulaCalc` are generic, props-driven islands (inline data,
+formulas) so most posts need no new React code. `REGISTRY.md` in that folder
+is the contract the `post` skill follows: design rules plus a "when to use"
+entry per component, so islands get reused instead of regenerated.
 
-## Importing from Obsidian
+## Writing (Claude Code skills)
 
-```sh
-claude
-> /obsidian-import "Spinup/2026-05-31 arena test"
-```
+- **`/post <rough notes, links, render paths>`**: Claude writes the EN post
+  and its PT twin (`ai: true`, shown as a small "written with Claude" mark),
+  picks or builds islands, checks them with a build and screenshots, and
+  pushes a draft. Preview: `https://spinup.fail/drafts/<slug>` (PT:
+  `/drafts/pt/<translationKey>`), unlisted and noindex. Then `change …` to
+  iterate or `ship it` to publish (`scripts/ship.mjs`).
+- **`/update <text>`**: publishes the author's text verbatim as a journal
+  update (`scripts/new-update.mjs`), plus frontmatter and any media, after one
+  confirmation.
+- `/obsidian-import`: the older vault-note importer (see its SKILL.md).
 
-See `.claude/skills/obsidian-import/SKILL.md` for the full pipeline.
-
-First-time setup: copy `config.json.example` to `config.json` and set
-`vaultPath`.
+Drafts (`draft: true`) are excluded from every list; they only exist under
+`/drafts/`. `npm run shoot -- <url> <out.png> [--mobile] [--full]` takes
+Playwright screenshots (prints console errors and horizontal overflow).
 
 ## Develop
 

@@ -24,9 +24,12 @@ src/
   pages/                             # routes
   styles/global.css                  # design tokens + island CSS
 .claude/
+  skills/post/SKILL.md               # /post: AI-written EN+PT post → draft preview → ship
+  skills/update/SKILL.md             # /update: author's words verbatim → live
   skills/obsidian-import/
-    SKILL.md                         # vault → MDX transformer
+    SKILL.md                         # vault → MDX transformer (older flow)
     config.json                      # vault path (gitignored)
+scripts/                             # shoot.mjs (screenshots), new-update.mjs, ship.mjs
 docs/themes/                         # checkpointed palettes (restorable)
 ```
 
@@ -35,7 +38,7 @@ docs/themes/                         # checkpointed palettes (restorable)
 Frontmatter is the source of truth. Never guess `type` — refuse and tell the
 user to add it.
 
-- `type: post`   — requires `title`, `summary`, `publishedAt` (+ optional `updatedAt`, `project`, `tags`, `hero`, `draft`)
+- `type: post`   — requires `title`, `summary`, `publishedAt` (+ optional `updatedAt`, `project`, `tags`, `hero`, `draft`, `lang`, `translationKey`, `ai`)
 - `type: update` — requires `project`, `date` (+ optional `title`, `mood`, `tags`, `draft`)
 
 Schemas in `src/content.config.ts`. Validation runs on `npm run build`.
@@ -106,6 +109,20 @@ checkpoints:
 When a palette is replaced, save the outgoing one as a checkpoint *before*
 applying the new one if the user has expressed any affection for it.
 
+## Writing flows: /post and /update
+
+- **Posts are AI-written** (`.claude/skills/post/SKILL.md`): EN + PT twin,
+  `ai: true`, pushed as `draft: true`. Drafts are previewed at
+  `/drafts/<slug>` and `/drafts/pt/<translationKey>` (noindex, unlisted,
+  excluded from all lists). Pushing drafts to `main` is fine; flipping
+  `draft: false` (`scripts/ship.mjs`) happens only on the author's word.
+- **Updates are the author's words, verbatim** (`.claude/skills/update/SKILL.md`):
+  written by `scripts/new-update.mjs` as plain `.md`; never reword, fix or
+  translate them. One confirmation showing the exact text, then push.
+- Drafts of updates preview at `/drafts/updates/<id>`.
+- Prefer the generic islands (`DataChart`, `FormulaCalc`) before writing new
+  React code.
+
 ## obsidian-import skill
 
 `.claude/skills/obsidian-import/SKILL.md` is the full pipeline (vault note →
@@ -142,7 +159,7 @@ npm run preview  # serve dist/
 | If you change… | Update… |
 |---|---|
 | A design token (color, spacing, font) | `src/styles/global.css` only — no inline styles in components |
-| Island design rules (registry, slider behavior, animation) | `src/components/islands/REGISTRY.md` AND `.claude/skills/obsidian-import/SKILL.md` (so generated islands inherit) |
+| Island design rules (registry, slider behavior, animation) | `src/components/islands/REGISTRY.md` AND `.claude/skills/obsidian-import/SKILL.md` (so generated islands inherit); the `post` skill defers to REGISTRY.md |
 | Frontmatter shape | `src/content.config.ts` AND any layout/route reading the new field |
 | Vault path / import config | `.claude/skills/obsidian-import/config.json` (gitignored) |
-| Theme | All of: tokens, callouts, every island's hardcoded series colors, REGISTRY's chart-series palette block. Save the outgoing palette to `docs/themes/`. |
+| Theme | All of: tokens, callouts, every island's hardcoded series colors, `SERIES` in `_primitives.tsx`, REGISTRY's chart-series palette block. Save the outgoing palette to `docs/themes/`. |
