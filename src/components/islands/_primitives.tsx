@@ -200,3 +200,12 @@ export function fmtNum(v: number, digits = 3): string {
   if (a !== 0 && (a >= 1e6 || a < 1e-3)) return v.toExponential(2);
   return Number(v.toPrecision(Math.max(1, digits))).toLocaleString('en-US', { maximumFractionDigits: 6 });
 }
+
+/** Short axis ticks (1.4k, 15k, 0.25) so they never run into the axis label. */
+export function fmtTick(v: number): string {
+  const a = Math.abs(v);
+  if (a >= 1e6) return `${Number((v / 1e6).toPrecision(2))}M`;
+  if (a >= 1e3) return `${Number((v / 1e3).toPrecision(2))}k`;
+  if (a !== 0 && a < 1e-2) return v.toExponential(0);
+  return String(Number(v.toPrecision(2)));
+}

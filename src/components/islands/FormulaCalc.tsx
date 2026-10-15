@@ -3,7 +3,7 @@ import {
   CartesianGrid, Label, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  IslandPanel, Controls, ControlGroup, Slider, Readout, ReadoutRow, SERIES, fmtNum,
+  IslandPanel, Controls, ControlGroup, Slider, Readout, ReadoutRow, SERIES, fmtNum, fmtTick,
 } from './_primitives';
 
 /**
@@ -36,35 +36,37 @@ interface Props {
   height?: number;
 }
 
-const MATH_NAMES = Object.getOwnPropertyNames(Math);
-const MATH_VALUES = MATH_NAMES.map((k) => (Math as any)[k]);
 const ANIM = { isAnimationActive: true, animationDuration: 180, animationEasing: 'ease-out' as const };
 
-type Fn = (...args: number[]) => number;
+type Fn = (scope: Record<string, number>) => number;
 
-function compile(inputs: Input[], outputs: Output[]): { fns: (Fn | null)[]; names: string[] } {
-  const names = inputs.map((i) => i.id);
-  const fns = outputs.map((o, idx) => {
-    const scope = [...MATH_NAMES, ...names, ...outputs.slice(0, idx).map((p) => p.id)];
+// Each expression sees Math's names, then the inputs, then earlier outputs;
+// later names shadow earlier ones (an output called `E` hides Math.E).
+function compile(inputs: Input[], outputs: Output[]): (Fn | null)[] {
+  return outputs.map((o, idx) => {
+    const names = [...new Set([
+      ...Object.getOwnPropertyNames(Math),
+      ...inputs.map((i) => i.id),
+      ...outputs.slice(0, idx).map((p) => p.id),
+    ])];
     try {
       // eslint-disable-next-line no-new-func
-      return new Function(...scope, `"use strict"; return (${o.expr.replace(/\^/g, '**')});`) as Fn;
+      const f = new Function(...names, `"use strict"; return (${o.expr.replace(/\^/g, '**')});`);
+      return (scope: Record<string, number>) => f(...names.map((n) => (n in scope ? scope[n] : (Math as any)[n])));
     } catch {
       return null;
     }
   });
-  return { fns, names };
 }
 
-function evaluate(fns: (Fn | null)[], vals: Record<string, number>, inputs: Input[]): number[] {
-  const out: number[] = [];
-  const base = inputs.map((i) => vals[i.id]);
-  for (const fn of fns) {
+function evaluate(fns: (Fn | null)[], vals: Record<string, number>, outputs: Output[]): number[] {
+  const scope: Record<string, number> = { ...vals };
+  return fns.map((fn, i) => {
     let v = NaN;
-    try { v = fn ? Number(fn(...MATH_VALUES, ...base, ...out)) : NaN; } catch { v = NaN; }
-    out.push(v);
-  }
-  return out;
+    try { v = fn ? Number(fn(scope)) : NaN; } catch { v = NaN; }
+    scope[outputs[i].id] = v;
+    return v;
+  });
 }
 
 export function FormulaCalc({ lang = 'en', title, inputs, outputs, chart, height = 240 }: Props) {
@@ -74,8 +76,8 @@ export function FormulaCalc({ lang = 'en', title, inputs, outputs, chart, height
   );
   const set = (id: string) => (v: number) => setVals((prev) => ({ ...prev, [id]: v }));
 
-  const { fns } = useMemo(() => compile(inputs, outputs), [inputs, outputs]);
-  const results = useMemo(() => evaluate(fns, vals, inputs), [fns, vals, inputs]);
+  const fns = useMemo(() => compile(inputs, outputs), [inputs, outputs]);
+  const results = useMemo(() => evaluate(fns, vals, outputs), [fns, vals, outputs]);
 
   const charted = chart ? chart.y.map((id) => outputs.findIndex((o) => o.id === id)).filter((i) => i >= 0) : [];
   const xInput = chart ? inputs.find((i) => i.id === chart.x) : undefined;
@@ -90,7 +92,7 @@ export function FormulaCalc({ lang = 'en', title, inputs, outputs, chart, height
     const rows = [];
     for (let k = 0; k <= n; k++) {
       const xv = xInput.min + ((xInput.max - xInput.min) * k) / n;
-      const r = evaluate(fns, { ...vals, [xInput.id]: xv }, inputs);
+      const r = evaluate(fns, { ...vals, [xInput.id]: xv }, outputs);
       const row: Record<string, number> = { [xInput.id]: xv };
       charted.forEach((oi) => { row[outputs[oi].id] = r[oi]; });
       rows.push(row);
@@ -127,11 +129,11 @@ export function FormulaCalc({ lang = 'en', title, inputs, outputs, chart, height
             <LineChart data={data} margin={{ top: 28, right: 16, bottom: 36, left: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={xInput.id} type="number" domain={[xInput.min, xInput.max]} tickMargin={6}
-                allowDataOverflow tickFormatter={(v) => fmtNum(Number(v), 3)}>
+                allowDataOverflow tickFormatter={(v) => fmtTick(Number(v))}>
                 <Label value={chart.xLabel ?? `${xInput.label}${xInput.unit ? ` (${xInput.unit})` : ''}`}
                   position="insideBottom" offset={-16} />
               </XAxis>
-              <YAxis tickMargin={6} tickFormatter={(v) => fmtNum(Number(v), 3)}>
+              <YAxis tickMargin={6} tickFormatter={(v) => fmtTick(Number(v))}>
                 {chart.yLabel && <Label value={chart.yLabel} angle={-90} position="insideLeft" offset={12} />}
               </YAxis>
               <Tooltip

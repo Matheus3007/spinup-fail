@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import {
-  Bar, BarChart, CartesianGrid, Label, Line, LineChart, ReferenceArea, ReferenceLine,
+  Bar, BarChart, CartesianGrid, Label, LabelList, Line, LineChart, ReferenceArea, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  IslandPanel, Controls, ControlGroup, Slider, Readout, ReadoutRow, Button, Hint, SERIES, fmtNum,
+  IslandPanel, Controls, ControlGroup, Slider, Readout, ReadoutRow, Button, Hint, SERIES, fmtNum, fmtTick,
 } from './_primitives';
 
 /**
@@ -12,7 +12,9 @@ import {
  * twin passes PT strings; `lang` only switches the built-in UI words.
  *
  * Line charts with a numeric x get an operating-point slider (cursor + readout,
- * ratio row when there are exactly two series) and drag-to-zoom.
+ * ratio row when there are exactly two series) and drag-to-zoom. Bar charts
+ * are drawn horizontally (category labels stay readable at phone width) with
+ * the value printed at the end of each bar.
  */
 
 type Lang = 'en' | 'pt';
@@ -66,7 +68,7 @@ function interp(data: Row[], x: string, key: string, at: number): number {
 
 export function DataChart({
   lang = 'en', title, kind = 'line', x, xLabel, yLabel, xUnit, series, data,
-  cursor, cursorAt, zoom = true, ratioLabel, height = 260,
+  cursor, cursorAt, zoom = true, ratioLabel, height,
 }: Props) {
   const t = STR[lang];
   const numericX = data.every((r) => typeof r[x] === 'number');
@@ -109,13 +111,13 @@ export function DataChart({
       type={numericX ? 'number' : 'category'}
       domain={domain ?? (numericX ? [xMin, xMax] : undefined)}
       allowDataOverflow
-      tickFormatter={numericX ? (v) => fmtNum(Number(v), 3) : undefined}
+      tickFormatter={numericX ? (v) => fmtTick(Number(v)) : undefined}
     >
       {xLabel && <Label value={xLabel} position="insideBottom" offset={-16} />}
     </XAxis>
   );
   const yAxis = (
-    <YAxis tickMargin={6} allowDataOverflow domain={['auto', 'auto']} tickFormatter={(v) => fmtNum(Number(v), 3)}>
+    <YAxis tickMargin={6} allowDataOverflow domain={['auto', 'auto']} tickFormatter={(v) => fmtTick(Number(v))}>
       {yLabel && <Label value={yLabel} angle={-90} position="insideLeft" offset={12} />}
     </YAxis>
   );
@@ -125,7 +127,18 @@ export function DataChart({
       labelFormatter={(v) => `${xLabel ?? x} ${numericX ? fmtNum(Number(v), 4) : v}${xUnit ? ` ${xUnit}` : ''}`}
     />
   );
-  const visible = domain ? data.filter((r) => Number(r[x]) >= domain[0] && Number(r[x]) <= domain[1]) : data;
+  // Category axis width for horizontal bars: fit the longest label, capped.
+  const catWidth = Math.min(150, 16 + 7 * Math.max(...data.map((r) => String(r[x]).length)));
+  const chartHeight = height ?? (isLine ? 260 : 56 + data.length * 36 * Math.max(1, series.length * 0.6));
+  // Keep one point past each edge of the zoom so lines run to the border
+  // (allowDataOverflow clips them); the Y axis fits what's left.
+  const visible = useMemo(() => {
+    if (!domain) return data;
+    const sorted = [...data].sort((a, b) => Number(a[x]) - Number(b[x]));
+    const lo = sorted.findLastIndex((r) => Number(r[x]) <= domain[0]);
+    const hi = sorted.findIndex((r) => Number(r[x]) >= domain[1]);
+    return sorted.slice(Math.max(0, lo), hi < 0 ? sorted.length : hi + 1);
+  }, [data, x, domain]);
 
   return (
     <IslandPanel title={title}>
@@ -146,7 +159,7 @@ export function DataChart({
       )}
 
       <div className="island-chart">
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           {isLine ? (
             <LineChart data={visible} margin={margin} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -161,13 +174,20 @@ export function DataChart({
               {drag && <ReferenceArea x1={drag.a} x2={drag.b} strokeOpacity={0.3} fill="var(--rule-strong)" fillOpacity={0.25} />}
             </LineChart>
           ) : (
-            <BarChart data={data} margin={margin}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              {xAxis}
-              {yAxis}
+            <BarChart data={data} layout="vertical" margin={{ top: 8, right: 48, bottom: yLabel ? 36 : 8, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" tickMargin={6} tickFormatter={(v) => fmtTick(Number(v))}>
+                {yLabel && <Label value={yLabel} position="insideBottom" offset={-16} />}
+              </XAxis>
+              <YAxis type="category" dataKey={x} tickMargin={6} width={catWidth} interval={0} />
               {tooltip}
               {series.map((s, i) => (
-                <Bar key={s.key} dataKey={s.key} name={s.label} fill={color(i)} radius={[3, 3, 0, 0]} {...ANIM} />
+                <Bar key={s.key} dataKey={s.key} name={s.label} fill={color(i)} radius={[0, 3, 3, 0]} {...ANIM}>
+                  {series.length === 1 && (
+                    <LabelList dataKey={s.key} position="right" className="island-bar-value"
+                      formatter={(v: number) => fmtNum(Number(v), 3)} />
+                  )}
+                </Bar>
               ))}
             </BarChart>
           )}

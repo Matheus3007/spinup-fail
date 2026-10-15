@@ -409,6 +409,9 @@ input[type="number"].island-number {
   font-size: 11px;
 }
 .island-chart .recharts-cartesian-grid line { stroke: var(--rule); }
+.island-chart .recharts-wrapper:focus,
+.island-chart .recharts-surface:focus { outline: none; }
+.island-chart .island-bar-value { fill: var(--fg); font-size: 0.75rem; }
 .island-chart .recharts-cartesian-axis line,
 .island-chart .recharts-cartesian-axis-tick-line {
   stroke: var(--rule-strong);
