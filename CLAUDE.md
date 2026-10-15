@@ -40,7 +40,7 @@ docs/themes/                         # checkpointed palettes (restorable)
 Frontmatter is the source of truth. Never guess `type` — refuse and tell the
 user to add it.
 
-- `type: post`   — requires `title`, `summary`, `publishedAt` (+ optional `updatedAt`, `project`, `tags`, `hero`, `draft`, `lang`, `translationKey`, `ai`)
+- `type: post`   — requires `title`, `summary`, `publishedAt` (+ optional `updatedAt`, `project`, `tags`, `hero`, `draft`, `lang`, `translationKey`)
 - `type: update` — requires `project`, `date` (+ optional `title`, `mood`, `tags`, `draft`)
 
 Schemas in `src/content.config.ts`. Validation runs on `npm run build`.
@@ -114,8 +114,8 @@ applying the new one if the user has expressed any affection for it.
 ## Writing flows: /post and /update
 
 - **Posts are AI-written** (`.claude/skills/post/SKILL.md`): EN + PT twin,
-  `ai: true`, pushed as `draft: true`. Drafts are previewed at
-  `/drafts/<slug>` and `/drafts/pt/<translationKey>` (noindex, unlisted,
+  no AI mark on the site (author's choice), pushed as `draft: true`.
+  Drafts are previewed at `/drafts/<slug>` and `/drafts/pt/<translationKey>` (noindex, unlisted,
   excluded from all lists). Pushing drafts to `main` is fine; flipping
   `draft: false` (`scripts/ship.mjs`) happens only on the author's word.
 - **Updates are the author's words, verbatim** (`.claude/skills/update/SKILL.md`):

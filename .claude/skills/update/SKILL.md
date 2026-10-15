@@ -95,7 +95,7 @@ On "no"/"cancel": delete the file and copied media, nothing is committed.
 - "Improve" the text, even an obvious typo. If you think something is a
   mistake (e.g. a sentence looks cut off), mention it in the confirmation
   line and let them decide.
-- Add the `ai` flag or any Claude attribution to updates.
+- Add any Claude attribution to updates.
 
 ## Testing the flow
 

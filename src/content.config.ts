@@ -15,8 +15,6 @@ const posts = defineCollection({
     draft: z.boolean().default(false),
     lang: z.enum(['en', 'pt']).default('en'),
     translationKey: z.string().optional(),
-    // Written by Claude from the author's notes; renders the <AiMark /> in PostLayout.
-    ai: z.boolean().default(false),
   }),
 });
 

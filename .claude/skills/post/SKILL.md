@@ -59,7 +59,6 @@ tags: ["…"]
 lang: en              # or pt
 translationKey: <pt-slug>
 draft: true
-ai: true
 ---
 ```
 
@@ -115,7 +114,7 @@ a post about a tool may be better served by screenshots and a link.
    - colors only from the palette / CSS variables; no Recharts legend
    - sliders present for numeric inputs, readout under the chart, ratio row for 2 series
    - images load and fit the column; PT page fully translated (island UI too)
-   - "draft preview" banner and "written with Claude" mark visible
+   - "draft preview" banner visible
 3. Stop the preview server.
 4. After the push (below), shoot the live preview URL once at phone width too.
    `shoot.mjs` uses Firefox for `https://` URLs automatically (Chromium's TLS
@@ -160,9 +159,8 @@ Old `/drafts/<slug>` URLs stop existing after the ship deploy (fine).
 
 ## Notes
 
-- The `ai: true` flag renders `<AiMark>` next to the language pill. The author
-  may remove it per post (`ai: false`) or site-wide (delete the `<AiMark>` line
-  in `src/layouts/PostLayout.astro`). Leave that choice to them.
+- No AI mark, badge or "written with Claude" line anywhere on the site: the
+  author decided against it. Don't add one, in frontmatter or in the prose.
 - Never touch updates (`src/content/updates/`) from this skill: those are the
   author's own words (see the `update` skill).
 
