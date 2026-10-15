@@ -8,7 +8,9 @@ Read this file at the start of any session before editing the project.
 - **Astro 6** with new content layer (`src/content.config.ts`).
 - **MDX** for posts and updates.
 - **React** for interactive "islands" (`client:visible`); **Recharts** for charts.
-- **Static** output → **GitHub Pages** at the apex domain `spinup.fail`.
+- **Static** output → **GitHub Pages**. The Pages custom domain is currently
+  `blog.spinup.fail` (`public/CNAME` still says `spinup.fail`; the apex is a
+  registrar placeholder). Check with `gh api repos/Matheus3007/spinup-fail/pages -q .cname`.
 
 ```
 src/

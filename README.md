@@ -38,7 +38,7 @@ entry per component, so islands get reused instead of regenerated.
 - **`/post <rough notes, links, render paths>`**: Claude writes the EN post
   and its PT twin (`ai: true`, shown as a small "written with Claude" mark),
   picks or builds islands, checks them with a build and screenshots, and
-  pushes a draft. Preview: `https://spinup.fail/drafts/<slug>` (PT:
+  pushes a draft. Preview: `https://blog.spinup.fail/drafts/<slug>` (PT:
   `/drafts/pt/<translationKey>`), unlisted and noindex. Then `change …` to
   iterate or `ship it` to publish (`scripts/ship.mjs`).
 - **`/update <text>`**: publishes the author's text verbatim as a journal

@@ -1,6 +1,6 @@
 ---
 name: post
-description: Turn the author's rough material (bullets, dictation, links, render paths) into a Claude-written bilingual blog post (EN + PT twin) with interactive islands, pushed as an unlisted draft preview at spinup.fail/drafts/<slug>. Also handles "change X" iterations and "ship it". Use for /post, "write a post about…", "ship it", "ship <slug>".
+description: Turn the author's rough material (bullets, dictation, links, render paths) into a Claude-written bilingual blog post (EN + PT twin) with interactive islands, pushed as an unlisted draft preview at blog.spinup.fail/drafts/<slug>. Also handles "change X" iterations and "ship it". Use for /post, "write a post about…", "ship it", "ship <slug>".
 ---
 
 # /post: AI-written posts, previewed as drafts
@@ -21,6 +21,11 @@ Three entry points:
 If "ship it" / "change" is ambiguous (several drafts exist and none was touched
 in this session), list the drafts (`grep -l "draft: true" src/content/posts/*`)
 and ask which one, in one line.
+
+**Site URL.** The blog is served from the GitHub Pages custom domain, which
+is currently `blog.spinup.fail` (the apex `spinup.fail` is a registrar
+placeholder). If URLs stop resolving, check the real one with
+`gh api repos/Matheus3007/spinup-fail/pages -q .cname` and use that.
 
 ## Before writing
 
@@ -112,6 +117,9 @@ a post about a tool may be better served by screenshots and a link.
    - images load and fit the column; PT page fully translated (island UI too)
    - "draft preview" banner and "written with Claude" mark visible
 3. Stop the preview server.
+4. After the push (below), shoot the live preview URL once at phone width too.
+   `shoot.mjs` uses Firefox for `https://` URLs automatically (Chromium's TLS
+   is broken by the WSL lib workaround).
 
 ## Publish the draft
 
@@ -123,14 +131,14 @@ git add -A src/content/posts public/media src/components/islands
 git commit -m "draft: <slug>"
 git push origin main
 gh run watch --exit-status $(gh run list -L1 --json databaseId -q '.[0].databaseId')
-curl -s -o /dev/null -w '%{http_code}' https://spinup.fail/drafts/<slug>/
+curl -s -o /dev/null -w '%{http_code}' https://blog.spinup.fail/drafts/<slug>/
 ```
 
 Reply (short, phone-sized):
 
 ```
-draft up: https://spinup.fail/drafts/<slug>
-pt:       https://spinup.fail/drafts/pt/<pt-slug>
+draft up: https://blog.spinup.fail/drafts/<slug>
+pt:       https://blog.spinup.fail/drafts/pt/<pt-slug>
 islands: <reused/generated, one line>
 gaps: <anything you couldn't verify, or "none">
 say "ship it" or "change …"
@@ -147,7 +155,7 @@ git commit -am "post: <slug>" && git push origin main
 gh run watch --exit-status $(gh run list -L1 --json databaseId -q '.[0].databaseId')
 ```
 
-Reply with `https://spinup.fail/posts/<slug>` and `/pt/posts/<pt-slug>`.
+Reply with `https://blog.spinup.fail/posts/<slug>` and `/pt/posts/<pt-slug>`.
 Old `/drafts/<slug>` URLs stop existing after the ship deploy (fine).
 
 ## Notes
@@ -157,3 +165,10 @@ Old `/drafts/<slug>` URLs stop existing after the ship deploy (fine).
   in `src/layouts/PostLayout.astro`). Leave that choice to them.
 - Never touch updates (`src/content/updates/`) from this skill: those are the
   author's own words (see the `update` skill).
+
+## Gotcha: deleted entries linger locally
+
+Astro's content cache (`node_modules/.astro/data-store.json`) can keep an
+entry after its file is deleted when the collection folder ends up empty. CI
+builds from scratch, so the live site is unaffected; locally, after deleting
+an entry, `rm node_modules/.astro/data-store.json` before rebuilding.

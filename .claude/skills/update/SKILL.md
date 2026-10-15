@@ -13,6 +13,11 @@ appended below the original, as they say).
 
 Claude only adds metadata and attaches media.
 
+**Site URL.** The blog is served from the GitHub Pages custom domain, which
+is currently `blog.spinup.fail` (the apex `spinup.fail` is a registrar
+placeholder). If URLs stop resolving, check the real one with
+`gh api repos/Matheus3007/spinup-fail/pages -q .cname` and use that.
+
 ## Parse the message
 
 `/update [project=<P>] [mood=<m>] [tags=a,b] [title="…"] [media=<path>[,<path>]] <text>`
@@ -78,7 +83,7 @@ git push origin main
 gh run watch --exit-status $(gh run list -L1 --json databaseId -q '.[0].databaseId')
 ```
 
-Reply: `live: https://spinup.fail/updates/<id>`.
+Reply: `live: https://blog.spinup.fail/updates/<id>`.
 
 If the author says "change …": a change to metadata or media → redo it. A
 change to the text → use their new text verbatim (they edit, you don't).
@@ -96,3 +101,10 @@ On "no"/"cancel": delete the file and copied media, nothing is committed.
 
 Use `--draft`: the file gets `draft: true`, is kept out of lists and is
 previewed at `/drafts/updates/<id>`. Delete it (and its media) afterwards.
+
+## Gotcha: deleted entries linger locally
+
+Astro's content cache (`node_modules/.astro/data-store.json`) can keep an
+entry after its file is deleted when the collection folder ends up empty. CI
+builds from scratch, so the live site is unaffected; locally, after deleting
+an entry, `rm node_modules/.astro/data-store.json` before rebuilding.

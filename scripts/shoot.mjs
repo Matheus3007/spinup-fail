@@ -1,9 +1,12 @@
 // Screenshots for checking posts and islands against the design rules.
-//   node scripts/shoot.mjs <url> <out.png> [--mobile] [--full]
+//   node scripts/shoot.mjs <url> <out.png> [--mobile] [--full] [--firefox]
 // Prints console errors/warnings (or "no console errors"). Exit 1 on page errors.
 // WSL without sudo: chromium's missing libs live in ~/.local/lib/chromium-deps
-// (same workaround as pcb-review); harmless elsewhere.
-import { chromium } from 'playwright-core';
+// (same workaround as pcb-review); harmless elsewhere. Chromium's TLS fails
+// with those libs, so https:// URLs (the live site) go through Firefox, which
+// brings its own NSS.
+import { chromium, firefox } from 'playwright-core';
+import fs from 'node:fs';
 import os from 'node:os';
 
 const args = process.argv.slice(2);
@@ -15,15 +18,17 @@ if (!url || !out) {
   process.exit(2);
 }
 
+const useFirefox = args.includes('--firefox') || url.startsWith('https://');
 const LIBS = `${os.homedir()}/.local/lib/chromium-deps`;
-const browser = await chromium.launch({
-  env: { ...process.env, LD_LIBRARY_PATH: [LIBS, process.env.LD_LIBRARY_PATH].filter(Boolean).join(':') },
-});
+const PW = `${os.homedir()}/.cache/ms-playwright`;
+const ffDir = useFirefox && fs.existsSync(PW) ? fs.readdirSync(PW).filter((d) => d.startsWith('firefox-')).sort().pop() : '';
+const libPath = [ffDir && `${PW}/${ffDir}/firefox`, LIBS, process.env.LD_LIBRARY_PATH].filter(Boolean).join(':');
+const browser = await (useFirefox ? firefox : chromium).launch({ env: { ...process.env, LD_LIBRARY_PATH: libPath } });
 const page = await browser.newPage({
   viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 },
   deviceScaleFactor: mobile ? 2 : 1,
-  isMobile: mobile,
-  hasTouch: mobile,
+  // Firefox has no mobile emulation; the 390px viewport is what matters.
+  ...(useFirefox ? {} : { isMobile: mobile, hasTouch: mobile }),
 });
 const logs = [];
 let fatal = false;
