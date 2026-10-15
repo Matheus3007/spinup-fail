@@ -1,0 +1,11 @@
+---
+// "Written with Claude" mark for posts with `ai: true`.
+// To drop it site-wide, delete the <AiMark> line in PostLayout.astro.
+interface Props { lang?: 'en' | 'pt' }
+const { lang = 'en' } = Astro.props;
+const label = lang === 'pt' ? 'escrito com Claude' : 'written with Claude';
+const title = lang === 'pt'
+  ? 'Texto escrito pelo Claude a partir das minhas notas; revisado por mim.'
+  : 'Prose written by Claude from my notes; reviewed by me.';
+---
+<span class="ai-mark" title={title}>✦ {label}</span>

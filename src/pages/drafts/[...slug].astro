@@ -1,0 +1,80 @@
+---
+// Unlisted previews of draft entries (draft: true). Nothing links here and the
+// pages are noindex; list pages filter drafts out. URLs:
+//   EN post  /drafts/<id>
+//   PT post  /drafts/pt/<translationKey>
+//   update   /drafts/updates/<id>
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+import UpdateLayout from '../../layouts/UpdateLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const updates = await getCollection('updates');
+
+  // Where a post lives once shipped, and where it can be read right now.
+  const liveHref = (p: CollectionEntry<'posts'>) =>
+    p.data.lang === 'pt' ? `/pt/posts/${p.data.translationKey ?? p.id}` : `/posts/${p.id}`;
+  const nowHref = (p: CollectionEntry<'posts'>) =>
+    p.data.draft
+      ? p.data.lang === 'pt' ? `/drafts/pt/${p.data.translationKey ?? p.id}` : `/drafts/${p.id}`
+      : liveHref(p);
+
+  const postPaths = posts
+    .filter((p) => p.data.draft)
+    .map((post) => {
+      const isPt = post.data.lang === 'pt';
+      const sibling = post.data.translationKey
+        ? posts.find((p) => p !== post && p.data.translationKey === post.data.translationKey && p.data.lang !== post.data.lang)
+        : undefined;
+      return {
+        params: { slug: isPt ? `pt/${post.data.translationKey ?? post.id}` : post.id },
+        props: { kind: 'post' as const, post, altHref: sibling && nowHref(sibling), live: liveHref(post) },
+      };
+    });
+
+  const updatePaths = updates
+    .filter((u) => u.data.draft)
+    .map((update) => ({
+      params: { slug: `updates/${update.id}` },
+      props: { kind: 'update' as const, update, live: `/updates/${update.id}` },
+    }));
+
+  return [...postPaths, ...updatePaths];
+}
+
+type Props =
+  | { kind: 'post'; post: CollectionEntry<'posts'>; altHref?: string; live: string }
+  | { kind: 'update'; update: CollectionEntry<'updates'>; live: string };
+
+const props = Astro.props;
+const entry = props.kind === 'post' ? props.post : props.update;
+const { Content } = await render(entry);
+---
+{props.kind === 'post' ? (
+  <PostLayout
+    title={props.post.data.title}
+    summary={props.post.data.summary}
+    publishedAt={props.post.data.publishedAt}
+    updatedAt={props.post.data.updatedAt}
+    project={props.post.data.project}
+    tags={props.post.data.tags}
+    lang={props.post.data.lang}
+    altLangHref={props.altHref}
+    ai={props.post.data.ai}
+    draftLiveHref={props.live}
+  >
+    <Content />
+  </PostLayout>
+) : (
+  <UpdateLayout
+    project={props.update.data.project}
+    date={props.update.data.date}
+    title={props.update.data.title}
+    mood={props.update.data.mood}
+    tags={props.update.data.tags}
+    draftLiveHref={props.live}
+  >
+    <Content />
+  </UpdateLayout>
+)}

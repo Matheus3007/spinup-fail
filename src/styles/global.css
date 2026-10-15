@@ -141,6 +141,23 @@ th[align="right"], td[align="right"] { text-align: right; }
   border-radius: 3px;
   padding: 0 0.35rem;
 }
+.ai-mark {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.draft-banner {
+  margin: 0 0 1.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--fg);
+  background: var(--bg-panel);
+  border: 1px dashed var(--accent);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
 .lang-toggle {
   margin-left: 0.5rem;
   font-size: 0.8rem;
@@ -465,3 +482,10 @@ input[type="number"].island-number {
 
 /* Fade the chart cursor a bit during drag-to-zoom */
 .island-panel.is-zooming .recharts-tooltip-wrapper { display: none !important; }
+
+/* Updates are published verbatim from the author's phone: keep their line
+   breaks instead of folding single newlines into one paragraph. */
+.update-body p { white-space: pre-line; }
+article img { max-width: 100%; height: auto; border-radius: 4px; }
+article figure { margin: 1.5rem 0; }
+article figcaption { margin-top: 0.4rem; font-size: 0.8rem; color: var(--muted); }

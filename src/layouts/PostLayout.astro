@@ -1,5 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import AiMark from '../components/AiMark.astro';
+import DraftBanner from '../components/DraftBanner.astro';
 
 interface Props {
   title: string;
@@ -10,13 +12,17 @@ interface Props {
   tags: string[];
   lang?: 'en' | 'pt';
   altLangHref?: string;
+  ai?: boolean;
+  /** Set on /drafts/* previews: adds noindex + a banner pointing at the live URL. */
+  draftLiveHref?: string;
 }
 
-const { title, summary, publishedAt, updatedAt, project, tags, lang = 'en', altLangHref } = Astro.props;
+const { title, summary, publishedAt, updatedAt, project, tags, lang = 'en', altLangHref, ai = false, draftLiveHref } = Astro.props;
 const fmt = (d: Date) => d.toISOString().slice(0, 10);
 const altLabel = lang === 'en' ? 'ler em português' : 'read in english';
 ---
-<BaseLayout title={`${title} · spinup.fail`} description={summary}>
+<BaseLayout title={`${title} · spinup.fail`} description={summary} noindex={Boolean(draftLiveHref)}>
+  {draftLiveHref && <DraftBanner liveHref={draftLiveHref} />}
   <article>
     <header>
       <h1>{title}</h1>
@@ -25,6 +31,7 @@ const altLabel = lang === 'en' ? 'ler em português' : 'read in english';
         {updatedAt && <span> · updated {fmt(updatedAt)}</span>}
         {project && <span> · {project}</span>}
         <span class="lang-pill">{lang}</span>
+        {ai && <AiMark lang={lang} />}
         {altLangHref && (
           <a
             class="lang-toggle"

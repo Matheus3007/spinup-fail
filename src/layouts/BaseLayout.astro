@@ -8,16 +8,19 @@ interface Props {
   /** Set to true on the home route so the small site brand collapses
       and the big page heading takes over. */
   isHome?: boolean;
+  /** Draft previews: keep them out of search engines. */
+  noindex?: boolean;
 }
 
-const { title, description, isHome = false } = Astro.props;
+const { title, description, isHome = false, noindex = false } = Astro.props;
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     {description && <meta name="description" content={description} />}
     <title>{title}</title>
     <script is:inline>

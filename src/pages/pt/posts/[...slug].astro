@@ -34,6 +34,7 @@ const enHref = enSlug ? `/posts/${enSlug}` : undefined;
   tags={post.data.tags}
   lang="pt"
   altLangHref={enHref}
+  ai={post.data.ai}
 >
   <Content />
 </PostLayout>

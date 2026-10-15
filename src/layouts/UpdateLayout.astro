@@ -1,5 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import DraftBanner from '../components/DraftBanner.astro';
 
 interface Props {
   project: string;
@@ -7,13 +8,15 @@ interface Props {
   title?: string;
   mood?: 'win' | 'loss' | 'progress' | 'stuck' | 'idea';
   tags: string[];
+  draftLiveHref?: string;
 }
 
-const { project, date, title, mood, tags } = Astro.props;
+const { project, date, title, mood, tags, draftLiveHref } = Astro.props;
 const fmt = (d: Date) => d.toISOString().slice(0, 10);
 const heading = title ?? `${project} · ${fmt(date)}`;
 ---
-<BaseLayout title={`${heading} · spinup.fail`}>
+<BaseLayout title={`${heading} · spinup.fail`} noindex={Boolean(draftLiveHref)}>
+  {draftLiveHref && <DraftBanner liveHref={draftLiveHref} />}
   <article>
     <header>
       <h1>{heading}</h1>
@@ -27,6 +30,8 @@ const heading = title ?? `${project} · ${fmt(date)}`;
       )}
       <hr />
     </header>
-    <slot />
+    <div class="update-body">
+      <slot />
+    </div>
   </article>
 </BaseLayout>

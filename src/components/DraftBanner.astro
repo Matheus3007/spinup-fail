@@ -1,0 +1,8 @@
+---
+// Shown on /drafts/* previews only.
+interface Props { liveHref: string }
+const { liveHref } = Astro.props;
+---
+<div class="draft-banner">
+  <strong>draft preview</strong> · unlisted, not indexed · goes live at <code>{liveHref}</code>
+</div>
