@@ -1,0 +1,68 @@
+---
+type: post
+title: "Revisando placas sem KiCad"
+summary: O pcb-lab cospe placas como código; eu queria conferir elas pelo celular. Então agora existe o review.spinup.fail, um visualizador estático com camadas de cobre, nets, datasheets na página certa do pino e um raio-X em 3D.
+publishedAt: 2026-10-14
+project: pcb-lab
+tags: ["pcb", "pcb-lab", "tools", "rebot"]
+lang: pt
+translationKey: revisando-placas-sem-kicad
+draft: true
+ai: true
+---
+
+import DataChart from '../../components/islands/DataChart.tsx';
+import Callout from '../../components/islands/Callout.tsx';
+
+No pcb-lab as placas são projetadas inteiramente como código: atopile, KiCad 10 e um pouco de Python, verificadas automaticamente e encomendadas já montadas na JLCPCB. O que é ótimo, até a hora que você quer *olhar* pra coisa. A saída é um `.kicad_pcb`, e o KiCad não mora no meu celular.
+
+Então eu fiz a outra metade: [review.spinup.fail](https://review.spinup.fail). É um app web estático, sem servidor, que abre um **bundle de revisão** exportado de uma placa do pcb-lab. Eu não reviso código, eu reviso resultado, e é aqui que o resultado aparece.
+
+## O que ele faz
+
+<figure>
+  <img src="/media/posts/reviewing-boards-without-kicad/copper-net-phone.png" alt="pcb-review no celular: a vista de cobre da rebot-ctrl-v2 com a net CRSF_RX selecionada, indo do U1 ao R1" width="390" />
+  <figcaption>A vista de cobre no celular. Toca num pad, aparece a net (aqui CRSF_RX, 2.9 mm em F.Cu).</figcaption>
+</figure>
+
+- **Cobre**: vista 2D de todas as camadas de cobre, internas inclusive. Pan, zoom, liga e desliga camadas, vira pro lado de baixo. Clica numa trilha, via, pad ou zona e a net inteira acende.
+- **Painel lateral**: a net selecionada, com os componentes e pinos, e o **datasheet** de cada peça aberto na página daquele pino. Tabela de pinos ou pinout, o que ele achar.
+- **3D**: a placa montada em three.js, com os modelos STEP reais do KiCad/EasyEDA convertidos pra GLB. Aperta `x` pro **raio-X**: a placa fica translúcida, cada camada de cobre aparece na cor do 2D, e a net selecionada é desenhada por cima, com o barril das vias onde ela troca de camada.
+- **BOM** com links pra LCSC/JLC, e **Checks**: o relatório de checks do próprio pcb-lab mais o DRC do KiCad. Clica num designator ou num marcador de DRC e ele pula pra lá na vista de cobre.
+
+<figure>
+  <img src="/media/posts/reviewing-boards-without-kicad/3d-xray-datasheet.png" alt="Vista 3D em raio-X da rebot-ctrl-v2 com a net SPI_SCK destacada, ao lado do datasheet do STM32G431 aberto na tabela de pinos do PB3" />
+  <figcaption>Raio-X na SPI_SCK: 10.9 mm em F.Cu, 13.3 mm em In2.Cu, 6 vias, três chips. O datasheet do STM32G431 abre na p.58 com o PB3 destacado.</figcaption>
+</figure>
+
+Deep links também funcionam, que é a parte que eu mais uso: `#net=CRSF_RX&ref=U1&pin=19` cai direto num pino, `#tab=3d` na vista 3D, e `?board=<nome>` escolhe a placa quando tem mais de uma hospedada.
+
+## O que o navegador baixa
+
+É tudo arquivo estático no GitHub Pages, então "quanto pesa uma placa" é uma pergunta justa. Pra rebot-ctrl-v2:
+
+<DataChart client:visible lang="pt" kind="bar" title="bundle de revisão da rebot-ctrl-v2" x="part" yLabel="KB"
+  series={[{ key: 'kb', label: 'tamanho', unit: 'KB' }]}
+  data={[
+    { part: 'board.json', kb: 318 },
+    { part: 'modelos 3D (14 GLB)', kb: 375 },
+    { part: 'índice de pinos', kb: 40 },
+    { part: 'datasheets', kb: 0 },
+  ]} />
+
+Menos de um megabyte pra uma placa de quatro camadas com todas as peças modeladas. Os datasheets dão zero porque o site público não hospeda eles: o painel lateral mostra a cópia do PDF da própria LCSC, aberta na página do pino. Localmente, com os PDFs no bundle, ele também destaca o nome do pino na página; no site público você cai na página certa e acha o pino sozinho.
+
+<Callout tone="note" title="o pcb-lab é só leitura">
+O exportador só lê a saída de build de uma placa no pcb-lab. Ele nunca escreve lá, então o pipeline das placas e o site de revisão não pisam um no outro.
+</Callout>
+
+## Usando
+
+```sh
+make bundle BOARD=rebot-ctrl-v2   # pcb-lab/boards/<board> -> web/public/bundles/<board>/
+make dev                          # http://localhost:5173
+```
+
+Na vista de cobre: `1`..`4` escolhem a camada ativa, `b` vira pro lado de baixo, `f` enquadra a placa, `Esc` limpa a seleção. Publicar uma placa é `make release-bundle BOARD=x`, commitar o bundle, dar push.
+
+A placa que tá lá agora é a controladora do ReBot, a rebot-ctrl-v2. Vai lá fuçar. Código: [Matheus3007/pcb-review](https://github.com/Matheus3007/pcb-review).

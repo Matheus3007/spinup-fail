@@ -1,0 +1,68 @@
+---
+type: post
+title: "Reviewing boards without KiCad"
+summary: pcb-lab spits out boards as code; I wanted to check them from my phone. So now there's review.spinup.fail, a static viewer with copper layers, nets, datasheets at the right pin, and a 3D X-ray.
+publishedAt: 2026-10-14
+project: pcb-lab
+tags: ["pcb", "pcb-lab", "tools", "rebot"]
+lang: en
+translationKey: revisando-placas-sem-kicad
+draft: true
+ai: true
+---
+
+import DataChart from '../../components/islands/DataChart.tsx';
+import Callout from '../../components/islands/Callout.tsx';
+
+Over in pcb-lab the boards are designed entirely as code: atopile, KiCad 10 and some Python, checked automatically, and ordered assembled from JLCPCB. Which is great, until you want to actually *look* at the thing. The output is a `.kicad_pcb`, and KiCad doesn't live on my phone.
+
+So I built the other half: [review.spinup.fail](https://review.spinup.fail). It's a static web app, no server, that opens a **review bundle** exported from a pcb-lab board. I don't review code, I review results, and this is where the results go.
+
+## What it does
+
+<figure>
+  <img src="/media/posts/reviewing-boards-without-kicad/copper-net-phone.png" alt="pcb-review on a phone: the copper view of rebot-ctrl-v2 with the CRSF_RX net selected, running from U1 to R1" width="390" />
+  <figcaption>The copper view on a phone. Tap a pad, get the net (here CRSF_RX, 2.9 mm on F.Cu).</figcaption>
+</figure>
+
+- **Copper**: a 2D view of every copper layer, inner layers included. Pan, zoom, toggle layers, flip to the bottom. Click a track, via, pad or zone and the whole net lights up.
+- **Side pane**: the selected net, with its components and pins, and each part's **datasheet** opened at the page for that pin. Pin table or pinout, whichever it finds.
+- **3D**: the assembled board in three.js, with the real KiCad/EasyEDA STEP models converted to GLB. Press `x` for **X-ray**: the board goes translucent, every copper layer shows in its 2D colour, and the selected net is drawn on top with via barrels where it changes layer.
+- **BOM** with LCSC/JLC links, and **Checks**: pcb-lab's own check report plus KiCad DRC. Click a designator or a DRC marker and it jumps there in the copper view.
+
+<figure>
+  <img src="/media/posts/reviewing-boards-without-kicad/3d-xray-datasheet.png" alt="3D X-ray view of rebot-ctrl-v2 with the SPI_SCK net highlighted, next to the STM32G431 datasheet opened at the PB3 pin table" />
+  <figcaption>X-ray on SPI_SCK: 10.9 mm on F.Cu, 13.3 mm on In2.Cu, 6 vias, three chips. The STM32G431 datasheet opens at p.58 with PB3 highlighted.</figcaption>
+</figure>
+
+Deep links work too, which is the part I actually use most: `#net=CRSF_RX&ref=U1&pin=19` drops you straight onto a pin, `#tab=3d` onto the 3D view, and `?board=<name>` picks a board when there's more than one hosted.
+
+## What the browser downloads
+
+The whole thing is static files on GitHub Pages, so "how heavy is a board" is a fair question. For rebot-ctrl-v2:
+
+<DataChart client:visible kind="bar" title="rebot-ctrl-v2 review bundle" x="part" yLabel="KB"
+  series={[{ key: 'kb', label: 'size', unit: 'KB' }]}
+  data={[
+    { part: 'board.json', kb: 318 },
+    { part: '3D models (14 GLB)', kb: 375 },
+    { part: 'pin index', kb: 40 },
+    { part: 'datasheets', kb: 0 },
+  ]} />
+
+Under a megabyte for a four-layer board with every part modelled. The datasheets are zero because the public site doesn't host them: the side pane shows LCSC's own copy of the PDF, opened at the pin's page. Locally, with the PDFs bundled, it also highlights the pin name on the page; on the public site you get the right page and find the pin yourself.
+
+<Callout tone="note" title="pcb-lab is read-only">
+The exporter only reads a board's build output in pcb-lab. It never writes there, so the board pipeline and the review site can't step on each other.
+</Callout>
+
+## Using it
+
+```sh
+make bundle BOARD=rebot-ctrl-v2   # pcb-lab/boards/<board> -> web/public/bundles/<board>/
+make dev                          # http://localhost:5173
+```
+
+In the copper view: `1`..`4` pick the active layer, `b` flips to the bottom, `f` fits the board, `Esc` clears the selection. Publishing a board is `make release-bundle BOARD=x`, commit the bundle, push.
+
+The board on there right now is ReBot's controller, rebot-ctrl-v2. Go poke at it. Source: [Matheus3007/pcb-review](https://github.com/Matheus3007/pcb-review).
